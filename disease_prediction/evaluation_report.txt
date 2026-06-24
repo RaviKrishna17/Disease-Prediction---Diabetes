@@ -1,0 +1,80 @@
+==================================================
+DIABETES PREDICTION SYSTEM - DETAILED EVALUATION REPORT
+==================================================
+
+Selected Best Model: XGBoost
+
+1. ACCURACY & PERFORMANCE METRICS (OPTIMIZED MODEL):
+--------------------------------------------------
+Training Accuracy: 84.59%
+Testing Accuracy:  82.08%
+
+2. 5-FOLD STRATIFIED CROSS VALIDATION (ON TRAINING DATA):
+--------------------------------------------------
+Individual Fold Scores: 83.32%, 82.42%, 83.71%, 83.64%, 84.41%
+Mean CV Accuracy:       83.50%
+Standard Deviation:     0.65%
+
+3. BEFORE VS AFTER OPTIMIZATION COMPARISON:
+--------------------------------------------------
+Metric                         | Before (Baseline)    | After (Optimized)    | Improvement    
+---------------------------------------------------------------------------------------------
+Test Accuracy                  |              82.93% |              82.08% |         -0.85%
+Test Recall (Macro)            |              39.53% |              44.24% |         +4.70%
+Test Precision (Macro)         |              45.20% |              44.52% |         -0.68%
+Test F1 Score (Macro)          |              40.50% |              44.33% |         +3.83%
+Test ROC AUC (Macro)           |               0.7404 |               0.7601 |        +0.0197
+
+4. CLASSIFICATION REPORT (ON TESTING DATA):
+--------------------------------------------------
+              precision    recall  f1-score   support
+
+ No Diabetes       0.88      0.92      0.90      4963
+Pre-Diabetes       0.00      0.00      0.00       121
+    Diabetes       0.46      0.41      0.43       916
+
+    accuracy                           0.82      6000
+   macro avg       0.45      0.44      0.44      6000
+weighted avg       0.80      0.82      0.81      6000
+
+
+5. GENERALIZATION CHECK:
+--------------------------------------------------
+Train vs Test Difference: 2.51%
+Status: Model Generalizes Well
+
+6. CONFIDENCE SCORE TESTING (10 RANDOM TEST SAMPLES):
+--------------------------------------------------
+Sample #   | Prediction       | Actual Value     | Confidence Score   | Status    
+--------------------------------------------------------------------------------
+1          | No Diabetes      | No Diabetes      | 94.15%             | Correct   
+2          | No Diabetes      | No Diabetes      | 94.24%             | Correct   
+3          | No Diabetes      | No Diabetes      | 49.81%             | Correct   
+4          | No Diabetes      | No Diabetes      | 87.43%             | Correct   
+5          | No Diabetes      | No Diabetes      | 83.94%             | Correct   
+6          | No Diabetes      | No Diabetes      | 92.92%             | Correct   
+7          | No Diabetes      | No Diabetes      | 86.24%             | Correct   
+8          | No Diabetes      | No Diabetes      | 73.60%             | Correct   
+9          | No Diabetes      | No Diabetes      | 81.94%             | Correct   
+10         | No Diabetes      | Pre-Diabetes     | 44.13%             | Incorrect 
+
+7. FINAL SUMMARY SUMMARY:
+--------------------------------------------------
+Train Accuracy:             84.59%
+Test Accuracy:              82.08%
+Cross Validation Accuracy:  83.50%
+Precision (Macro):          44.52%
+Recall (Macro):             44.24%
+F1 Score (Macro):           44.33%
+ROC AUC (Macro):            0.7603
+==================================================
+
+8. COMPARISON WITH OLD PIMA DATASET RESULTS:
+--------------------------------------------------
+Metric                         | Old Pima Dataset     | New BRFSS2015 Dataset  | Improvement    
+---------------------------------------------------------------------------------------------
+Accuracy                       |              77.27% |                82.08% |         +4.81%
+Recall                         |              62.96% |                44.24% |        -18.72%
+F1 Score                       |              66.02% |                44.33% |        -21.69%
+
+==================================================

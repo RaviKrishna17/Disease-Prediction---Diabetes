@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node/Next.js/React
+node_modules/
+/frontend/node_modules/
+.next/
+/frontend/.next/
+dist/
+/frontend/dist/
+.env*.local
+*.log
+.DS_Store
+.eslintcache
+
