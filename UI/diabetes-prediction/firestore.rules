@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Safety net block - default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive helpers for fortress rules
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner(userId) { 
+      return isSignedIn() && request.auth.uid == userId; 
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.keys().hasAll(['name', 'email', 'phone']) && request.resource.data.keys().size() <= 10;
+      allow update: if isOwner(userId) && request.resource.data.keys().hasAll(['name', 'email', 'phone']);
+      allow delete: if false; // Profiles cannot be deleted in standard client flow
+
+      // 2. Predictions subcollection
+      match /predictions/{predictionId} {
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.keys().hasAll(['id', 'date', 'riskPercentage', 'riskLevel']);
+        allow update, delete: if false; // Screening history is immutable after logging
+      }
+    }
+  }
+}
