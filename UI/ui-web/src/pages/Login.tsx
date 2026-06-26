@@ -37,7 +37,7 @@ export default function Login() {
   // Redirect if already authenticated
   useEffect(() => {
     if (currentUser) {
-      navigate('/prediction');
+      navigate('/');
     }
   }, [currentUser, navigate]);
 
@@ -46,7 +46,7 @@ export default function Login() {
     setIsSigningIn(true);
     try {
       await loginWithGoogle();
-      navigate('/prediction');
+      navigate('/');
     } catch (err: any) {
       console.error(err);
       setError(err?.message || 'Failed to complete Google authentication.');
@@ -76,10 +76,11 @@ export default function Login() {
     try {
       if (isSignUpMode) {
         await registerWithEmailAndPassword(email, password, fullName);
+        await loginWithEmailAndPassword(email, password);
       } else {
         await loginWithEmailAndPassword(email, password);
       }
-      navigate('/prediction');
+      navigate('/');
     } catch (err: any) {
       console.error(err);
       setError(err?.message || 'Authentication failed. Please verify your credentials and try again.');

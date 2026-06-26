@@ -1,0 +1,1257 @@
+{
+  "users": {
+    "test_user_123": {
+      "profile": {},
+      "predictions": {
+        "DS-860": {
+          "id": "DS-860",
+          "date": "June 26, 2026, 12:11 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-959": {
+          "id": "DS-959",
+          "date": "June 26, 2026, 12:45 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-534": {
+          "id": "DS-534",
+          "date": "June 26, 2026, 12:55 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-013": {
+          "id": "DS-013",
+          "date": "June 26, 2026, 01:03 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-083": {
+          "id": "DS-083",
+          "date": "June 26, 2026, 01:04 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-354": {
+          "id": "DS-354",
+          "date": "June 26, 2026, 01:09 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        }
+      }
+    },
+    "test_user_alex": {
+      "profile": {
+        "name": "Alex Smith",
+        "email": "alexsmith@gmail.com",
+        "phone": "+1 (555) 000-1111",
+        "bloodGroup": "A-Positive (A+)"
+      },
+      "predictions": {}
+    },
+    "sarah_jenkins_uid": {
+      "profile": {},
+      "predictions": {
+        "DS-553": {
+          "id": "DS-553",
+          "date": "June 26, 2026, 12:39 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.7107,
+          "confidence": "71%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 29,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "104.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "5.8%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.4",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.4,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-578": {
+          "id": "DS-578",
+          "date": "June 26, 2026, 01:12 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.7414,
+          "confidence": "74%",
+          "recommendation": [
+            "Schedule an urgent fasting plasma glucose/OGTT review with an endocrinologist.",
+            "Monitor daily blood glucose spikes prior to and 2 hours after standard meals."
+          ],
+          "riskPercentage": 26,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Schedule an urgent fasting plasma glucose/OGTT review with an endocrinologist.",
+            "Monitor daily blood glucose spikes prior to and 2 hours after standard meals."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "141.0 mg/dL",
+              "description": "Enters diabetic range. Heavy risk contributor."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "7.1%",
+              "description": "Sustained hyperglycemia indicator. Severe marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.7",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            }
+          ],
+          "calculatedBMI": 26.7,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-445": {
+          "id": "DS-445",
+          "date": "June 26, 2026, 08:40 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.7414,
+          "confidence": "74%",
+          "recommendation": [
+            "Schedule an urgent fasting plasma glucose/OGTT review with an endocrinologist.",
+            "Monitor daily blood glucose spikes prior to and 2 hours after standard meals."
+          ],
+          "riskPercentage": 26,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Schedule an urgent fasting plasma glucose/OGTT review with an endocrinologist.",
+            "Monitor daily blood glucose spikes prior to and 2 hours after standard meals."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "141.0 mg/dL",
+              "description": "Enters diabetic range. Heavy risk contributor."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "7.1%",
+              "description": "Sustained hyperglycemia indicator. Severe marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.7",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            }
+          ],
+          "calculatedBMI": 26.7,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        }
+      }
+    },
+    "1": {
+      "profile": {},
+      "predictions": {
+        "DS-333": {
+          "id": "DS-333",
+          "date": "June 26, 2026, 09:12 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-373": {
+          "id": "DS-373",
+          "date": "June 26, 2026, 09:12 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-054": {
+          "id": "DS-054",
+          "date": "June 26, 2026, 09:24 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-862": {
+          "id": "DS-862",
+          "date": "June 26, 2026, 09:37 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-273": {
+          "id": "DS-273",
+          "date": "June 26, 2026, 09:44 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-770": {
+          "id": "DS-770",
+          "date": "June 26, 2026, 09:52 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-930": {
+          "id": "DS-930",
+          "date": "June 26, 2026, 09:55 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-021": {
+          "id": "DS-021",
+          "date": "June 26, 2026, 09:57 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-062": {
+          "id": "DS-062",
+          "date": "June 26, 2026, 09:57 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-859": {
+          "id": "DS-859",
+          "date": "June 26, 2026, 11:17 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-274": {
+          "id": "DS-274",
+          "date": "June 26, 2026, 11:24 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-019": {
+          "id": "DS-019",
+          "date": "June 26, 2026, 11:36 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-119": {
+          "id": "DS-119",
+          "date": "June 26, 2026, 11:55 AM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-983": {
+          "id": "DS-983",
+          "date": "June 26, 2026, 12:09 PM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-707": {
+          "id": "DS-707",
+          "date": "June 26, 2026, 12:21 PM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        },
+        "DS-761": {
+          "id": "DS-761",
+          "date": "June 26, 2026, 12:22 PM",
+          "prediction": "No Diabetes",
+          "risk": "Moderate",
+          "probability": 0.5249,
+          "confidence": "52%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 48,
+          "riskLevel": "Moderate",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "115.0 mg/dL",
+              "description": "Impaired fasting glucose (Pre-diabetic zone)."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "6.1%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.1",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.1,
+          "clinicalNotes": "Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination."
+        }
+      }
+    },
+    "3": {
+      "profile": {},
+      "predictions": {
+        "DS-135": {
+          "id": "DS-135",
+          "date": "June 26, 2026, 12:12 PM",
+          "prediction": "No Diabetes",
+          "risk": "Low",
+          "probability": 0.769,
+          "confidence": "77%",
+          "recommendation": [
+            "Schedule an urgent fasting plasma glucose/OGTT review with an endocrinologist.",
+            "Monitor daily blood glucose spikes prior to and 2 hours after standard meals."
+          ],
+          "riskPercentage": 23,
+          "riskLevel": "Low",
+          "recommendations": [
+            "Schedule an urgent fasting plasma glucose/OGTT review with an endocrinologist.",
+            "Monitor daily blood glucose spikes prior to and 2 hours after standard meals."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "negative",
+              "value": "141.0 mg/dL",
+              "description": "Enters diabetic range. Heavy risk contributor."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "7.1%",
+              "description": "Sustained hyperglycemia indicator. Severe marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "850.7",
+              "description": "Obesity levels heavily increase insulin resistance."
+            }
+          ],
+          "calculatedBMI": 850.7,
+          "clinicalNotes": "Patient demonstrates robust clinical homeostasis with healthy cell-receptive biomarkers. Current cardiovascular risk profile is highly protective against early diabetes development."
+        }
+      }
+    }
+  }
+}

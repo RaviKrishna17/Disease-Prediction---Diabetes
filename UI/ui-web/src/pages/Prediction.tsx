@@ -12,7 +12,7 @@ import {
   User, Scale, Droplet, UploadCloud, Shield, Check, Flame, Info, Trash2, FileText, Stethoscope
 } from 'lucide-react';
 import { PatientData, PredictionResult, FactorImpact } from '../types';
-import { useHistory } from '../lib/firebase';
+import { useAuth, useHistory } from '../lib/firebase';
 
 interface TooltipContent {
   title: string;
@@ -552,26 +552,40 @@ function MedicalCheckbox({ checked }: MedicalCheckboxProps) {
   );
 }
 
+const BACKEND_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+
 export default function Prediction() {
+  const { currentUser } = useAuth();
   const { addPredictionRecord } = useHistory();
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [showOcrWarningBanner, setShowOcrWarningBanner] = useState(false);
+  const [ocrPulseActive, setOcrPulseActive] = useState(false);
+  const [uploadValidationError, setUploadValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (missingFields.length === 0) {
+      setShowOcrWarningBanner(false);
+    }
+  }, [missingFields]);
+
   // 1. Core input states
   const [formData, setFormData] = useState<PatientData>({
     age: '',
     gender: 'female',
-    height: 165,
-    weight: 72,
-    systolicBP: 125,
-    diastolicBP: 80,
-    glucose: 104,
-    hba1c: 5.8,
-    familyHistory: true,
+    height: '',
+    weight: '',
+    systolicBP: '',
+    diastolicBP: '',
+    glucose: '',
+    hba1c: '',
+    familyHistory: false,
     cholesterol: false,
     smoking: 'never',
     activityLevel: 'moderate',
   });
 
   // 2. Auxiliary states
-  const [calculatedBMI, setCalculatedBMI] = useState<number>(26.4);
+  const [calculatedBMI, setCalculatedBMI] = useState<number>(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [result, setResult] = useState<PredictionResult | null>(null);
@@ -622,14 +636,17 @@ export default function Prediction() {
 
   // Auto-calculate BMI
   useEffect(() => {
-    if (formData.height > 0 && formData.weight > 0) {
-      const heightInMeters = formData.height / 100;
-      const bmi = formData.weight / (heightInMeters * heightInMeters);
+    if (formData.height && formData.weight && Number(formData.height) > 0 && Number(formData.weight) > 0) {
+      const heightInMeters = Number(formData.height) / 100;
+      const bmi = Number(formData.weight) / (heightInMeters * heightInMeters);
       setCalculatedBMI(parseFloat(bmi.toFixed(1)));
+    } else {
+      setCalculatedBMI(0);
     }
   }, [formData.height, formData.weight]);
 
   const bmiStatus = (bmi: number) => {
+    if (!bmi || bmi <= 0) return { label: 'Enter metrics', color: 'text-gray-400 border-gray-500/20 bg-gray-500/5' };
     if (bmi < 18.5) return { label: 'Underweight', color: 'text-amber-400 border-amber-500/20 bg-amber-500/5' };
     if (bmi < 25) return { label: 'Healthy Weight', color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' };
     if (bmi < 30) return { label: 'Overweight', color: 'text-orange-400 border-orange-500/20 bg-orange-500/5' };
@@ -657,6 +674,10 @@ export default function Prediction() {
       ...prev,
       [name]: processedValue,
     }));
+
+    if (processedValue !== '' && (type !== 'number' || Number(processedValue) > 0)) {
+      setMissingFields(prev => prev.filter(f => f !== name));
+    }
   };
 
   // Drag & Drop Handlers
@@ -670,46 +691,107 @@ export default function Prediction() {
   };
 
   const processUploadedFile = (file: File) => {
+    setUploadValidationError(null);
     setIsParsingFile(true);
     setParsingStepText('Securely uploading clinical report...');
     
+    const uploadFile = async () => {
+      try {
+        const formDataPayload = new FormData();
+        formDataPayload.append('file', file);
+
+        const response = await fetch(`${BACKEND_URL}/upload-report`, {
+          method: 'POST',
+          body: formDataPayload
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Failed to extract values from report');
+        }
+
+        const data = await response.json();
+        
+        // Populate the form fields with extracted data
+        setFormData(prev => ({
+          ...prev,
+          age: data.age !== null && data.age !== undefined ? data.age : prev.age,
+          gender: (data.gender !== null && data.gender !== undefined && ['male', 'female', 'other'].includes(data.gender.toLowerCase())) ? data.gender.toLowerCase() : prev.gender,
+          height: data.height !== null && data.height !== undefined ? data.height : prev.height,
+          weight: data.weight !== null && data.weight !== undefined ? data.weight : prev.weight,
+          systolicBP: data.systolic_bp !== null && data.systolic_bp !== undefined ? data.systolic_bp : prev.systolicBP,
+          diastolicBP: data.diastolic_bp !== null && data.diastolic_bp !== undefined ? data.diastolic_bp : prev.diastolicBP,
+          glucose: data.glucose !== null && data.glucose !== undefined ? data.glucose : prev.glucose,
+          hba1c: data.hba1c !== null && data.hba1c !== undefined ? data.hba1c : prev.hba1c,
+        }));
+        
+        // Also update BMI if height/weight are extracted
+        if (data.height && data.weight) {
+          const heightInMeters = data.height / 100;
+          const bmiVal = data.weight / (heightInMeters * heightInMeters);
+          setCalculatedBMI(parseFloat(bmiVal.toFixed(1)));
+        } else if (data.bmi) {
+          setCalculatedBMI(data.bmi);
+        }
+
+        // Check for missing required fields (either from data or current state if not populated)
+        const missing: string[] = [];
+        const finalAge = data.age !== null && data.age !== undefined ? data.age : formData.age;
+        const finalHeight = data.height !== null && data.height !== undefined ? data.height : formData.height;
+        const finalWeight = data.weight !== null && data.weight !== undefined ? data.weight : formData.weight;
+        const finalSystolic = data.systolic_bp !== null && data.systolic_bp !== undefined ? data.systolic_bp : formData.systolicBP;
+        const finalDiastolic = data.diastolic_bp !== null && data.diastolic_bp !== undefined ? data.diastolic_bp : formData.diastolicBP;
+        const finalGlucose = data.glucose !== null && data.glucose !== undefined ? data.glucose : formData.glucose;
+        const finalHba1c = data.hba1c !== null && data.hba1c !== undefined ? data.hba1c : formData.hba1c;
+
+        if (finalAge === '' || finalAge === null || finalAge === undefined || Number(finalAge) <= 0) missing.push('age');
+        if (finalHeight === '' || finalHeight === null || finalHeight === undefined || Number(finalHeight) <= 0) missing.push('height');
+        if (finalWeight === '' || finalWeight === null || finalWeight === undefined || Number(finalWeight) <= 0) missing.push('weight');
+        if (finalSystolic === '' || finalSystolic === null || finalSystolic === undefined || Number(finalSystolic) <= 0) missing.push('systolicBP');
+        if (finalDiastolic === '' || finalDiastolic === null || finalDiastolic === undefined || Number(finalDiastolic) <= 0) missing.push('diastolicBP');
+        if (finalGlucose === '' || finalGlucose === null || finalGlucose === undefined || Number(finalGlucose) <= 0) missing.push('glucose');
+        if (finalHba1c === '' || finalHba1c === null || finalHba1c === undefined || Number(finalHba1c) <= 0) missing.push('hba1c');
+
+        setMissingFields(missing);
+        if (missing.length > 0) {
+          setShowOcrWarningBanner(true);
+          setOcrPulseActive(true);
+          setTimeout(() => {
+            setOcrPulseActive(false);
+          }, 3000);
+          setTimeout(() => {
+            const firstMissingKey = missing[0];
+            const inputEl = document.getElementById(firstMissingKey);
+            if (inputEl) {
+              inputEl.focus();
+              inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 100);
+        } else {
+          setShowOcrWarningBanner(false);
+        }
+      } catch (err: any) {
+        console.error("Report extraction failed:", err);
+        setUploadValidationError(err.message || 'Report upload parsing failed. Please verify files and try again.');
+      } finally {
+        setIsParsingFile(false);
+        setParsingStepText('');
+      }
+    };
+
+    // To preserve the premium feel of the steps, let's trigger step text transitions
     setTimeout(() => {
       setParsingStepText('Scanning document structure (OCR)...');
-    }, 700);
+    }, 600);
 
     setTimeout(() => {
       setParsingStepText('Extracting physiological biomarkers (HbA1c, Glucose)...');
-    }, 1400);
+    }, 1200);
 
     setTimeout(() => {
       setParsingStepText('Populating clinical assessment parameters...');
-      // Pre-fill fields with clinical data from report
-      setFormData({
-        age: 45,
-        gender: 'male',
-        height: 172,
-        weight: 81,
-        systolicBP: 135,
-        diastolicBP: 85,
-        glucose: 114,
-        hba1c: 6.2,
-        familyHistory: true,
-        cholesterol: true,
-        smoking: 'former',
-        activityLevel: 'moderate',
-      });
-      // Set calculated BMI based on extracted height and weight
-      const heightInMeters = 1.72;
-      const bmi = 81 / (heightInMeters * heightInMeters);
-      setCalculatedBMI(parseFloat(bmi.toFixed(1)));
-      setHeartDisease(false);
-      setStrokeHistory(false);
-    }, 2100);
-
-    setTimeout(() => {
-      setIsParsingFile(false);
-      setParsingStepText('');
-    }, 2700);
+      uploadFile();
+    }, 1800);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -734,18 +816,18 @@ export default function Prediction() {
     setFormData({
       age: '',
       gender: 'female',
-      height: 165,
-      weight: 72,
-      systolicBP: 125,
-      diastolicBP: 80,
-      glucose: 104,
-      hba1c: 5.8,
-      familyHistory: true,
+      height: '',
+      weight: '',
+      systolicBP: '',
+      diastolicBP: '',
+      glucose: '',
+      hba1c: '',
+      familyHistory: false,
       cholesterol: false,
       smoking: 'never',
       activityLevel: 'moderate',
     });
-    setCalculatedBMI(26.4);
+    setCalculatedBMI(0);
     setUploadedFile(null);
     setHeartDisease(false);
     setStrokeHistory(false);
@@ -753,268 +835,123 @@ export default function Prediction() {
     setResult(null);
     setIsParsingFile(false);
     setParsingStepText('');
+    setUploadValidationError(null);
+    setMissingFields([]);
+    setShowOcrWarningBanner(false);
   };
 
-  // ML Risk Calculation Emulator
+  // ML Risk Prediction REST Client
   const calculatePrediction = () => {
-    // If a medical report is uploaded, we do NOT require Age or any other input requirement to be filled out.
-    if (!uploadedFile && (formData.age === '' || Number(formData.age) <= 0)) {
-      const ageInput = document.getElementById('age');
-      if (ageInput) {
-        ageInput.focus();
-        ageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Input validation: ensure all required parameters are supplied
+    const requiredFields: { key: keyof PatientData; label: string }[] = [
+      { key: 'age', label: 'Age' },
+      { key: 'height', label: 'Height' },
+      { key: 'weight', label: 'Weight' },
+      { key: 'systolicBP', label: 'Systolic Blood Pressure (Top)' },
+      { key: 'diastolicBP', label: 'Diastolic Blood Pressure (Bottom)' },
+      { key: 'glucose', label: 'Blood Sugar Level' },
+      { key: 'hba1c', label: 'Long-Term Blood Sugar (HbA1c)' }
+    ];
+
+    const missing: string[] = [];
+    for (const field of requiredFields) {
+      if (formData[field.key] === '' || Number(formData[field.key]) <= 0) {
+        missing.push(field.key);
       }
+    }
+
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      setShowOcrWarningBanner(true);
+      setTimeout(() => {
+        const firstMissingKey = missing[0];
+        const inputEl = document.getElementById(firstMissingKey);
+        if (inputEl) {
+          inputEl.focus();
+          inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
       return;
     }
+
+    setMissingFields([]);
+    setShowOcrWarningBanner(false);
 
     setIsAnalyzing(true);
     setAnalysisStep(0);
 
-    // Multi-stage loader steps simulation
-    const intervals = [800, 1600, 2400, 3200];
-    intervals.forEach((ms, index) => {
-      setTimeout(() => {
-        setAnalysisStep(index + 1);
-        if (index === intervals.length - 1) {
-          executeAlgorithm();
+    const runPrediction = async () => {
+      try {
+        const payload = {
+          ...formData,
+          heartDisease,
+          strokeHistory,
+          cholesterolChecked,
+          hasReport: !!uploadedFile
+        };
+
+        console.log("Sending prediction request...", payload);
+
+        const response = await fetch(`${BACKEND_URL}/predict`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-UID': currentUser?.uid || 'anonymous_user'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Prediction engine returned an error');
         }
-      }, ms);
-    });
-  };
 
-  const executeAlgorithm = () => {
-    let logit = -4.5; // Healthy intercept constant
+        const data = await response.json();
+        console.log("Backend response received...", data);
 
-    // Robust variable extractions with safe clinical fallbacks
-    const ageVal = formData.age === '' ? 30 : Number(formData.age);
-    const heightVal = (formData.height as any) === '' ? 165 : Number(formData.height);
-    const weightVal = (formData.weight as any) === '' ? 72 : Number(formData.weight);
-    const glucoseVal = (formData.glucose as any) === '' ? 104 : Number(formData.glucose);
-    const hba1cVal = (formData.hba1c as any) === '' ? 5.8 : Number(formData.hba1c);
-    const systolicVal = (formData.systolicBP as any) === '' ? 125 : Number(formData.systolicBP);
-    const diastolicVal = (formData.diastolicBP as any) === '' ? 80 : Number(formData.diastolicBP);
+        // Multi-stage loader steps simulation to keep premium visual feel
+        const intervals = [800, 1600, 2400, 3200];
+        intervals.forEach((ms, index) => {
+          setTimeout(() => {
+            setAnalysisStep(index + 1);
+            if (index === intervals.length - 1) {
+              setResult({
+                riskPercentage: data.riskPercentage,
+                riskLevel: data.riskLevel,
+                recommendations: data.recommendations,
+                impacts: data.impacts,
+                calculatedBMI: data.calculatedBMI,
+                clinicalNotes: data.clinicalNotes
+              });
+              // Sync timeline history in useHistory state
+              addPredictionRecord({
+                date: data.date,
+                riskPercentage: data.riskPercentage,
+                riskLevel: data.riskLevel,
+                recommendations: data.recommendations,
+                clinicalNotes: data.clinicalNotes,
+                age: formData.age === '' ? 30 : Number(formData.age),
+                gender: formData.gender,
+                bmi: data.calculatedBMI,
+                glucose: formData.glucose === '' ? 104 : Number(formData.glucose),
+                hba1c: formData.hba1c === '' ? 5.8 : Number(formData.hba1c),
+                systolicBP: formData.systolicBP === '' ? 125 : Number(formData.systolicBP),
+                diastolicBP: formData.diastolicBP === '' ? 80 : Number(formData.diastolicBP),
+              }).catch(err => {
+                console.error("Failed to automatically record assessment entry:", err);
+              });
+              setIsAnalyzing(false);
+            }
+          }, ms);
+        });
+      } catch (err: any) {
+        console.error("Prediction failed:", err);
+        alert(`Prediction Error: ${err.message || 'Server failed to return prediction result.'}`);
+        setIsAnalyzing(false);
+      }
+    };
 
-    const heightInMeters = heightVal / 100;
-    const computedBmi = weightVal / (heightInMeters * heightInMeters);
-    const currentBmi = isNaN(computedBmi) ? 26.4 : Number(computedBmi.toFixed(1));
-
-    // BMI Impact
-    if (currentBmi > 25) {
-      logit += (currentBmi - 25) * 0.12;
-    }
-    if (currentBmi > 30) {
-      logit += 0.4;
-    }
-
-    // Age Impact
-    logit += (ageVal - 20) * 0.035;
-
-    // Fasting Glucose Impact
-    if (glucoseVal > 100) {
-      logit += (glucoseVal - 100) * 0.045;
-    }
-    if (glucoseVal >= 126) {
-      logit += 1.2;
-    }
-
-    // HbA1c Impact
-    if (hba1cVal > 5.6) {
-      logit += (hba1cVal - 5.6) * 1.5;
-    }
-
-    // Blood Pressure Impact (Systolic/Diastolic)
-    const maxBP = Math.max(systolicVal, diastolicVal * 1.5);
-    if (maxBP > 120) {
-      logit += (maxBP - 120) * 0.015;
-    }
-
-    // Lifestyle/Genetic flags
-    if (formData.familyHistory) logit += 0.85;
-    if (formData.cholesterol) logit += 0.45;
-    
-    if (formData.smoking === 'current') logit += 0.55;
-    else if (formData.smoking === 'former') logit += 0.25;
-
-    if (formData.activityLevel === 'sedentary') logit += 0.6;
-    else if (formData.activityLevel === 'active') logit -= 0.5;
-
-    // Extra variables diagnostic adjustments
-    if (heartDisease) logit += 0.5;
-    if (strokeHistory) logit += 0.4;
-
-    // Sigmoid squash (0.0 to 1.0)
-    const risk = 1 / (1 + Math.exp(-logit));
-    const riskPercentage = Math.round(risk * 100);
-
-    // Define Risk Level Category
-    let riskLevel: 'Low' | 'Moderate' | 'High' = 'Low';
-    if (riskPercentage >= 60) riskLevel = 'High';
-    else if (riskPercentage >= 25) riskLevel = 'Moderate';
-
-    // Generate dynamic factors contribution analysis
-    const impacts: FactorImpact[] = [];
-
-    // Glucose Impact
-    if (glucoseVal >= 126) {
-      impacts.push({
-        factor: 'Plasma Glucose',
-        impact: 'negative',
-        value: `${glucoseVal} mg/dL`,
-        description: 'Enters diabetic range. Heavy risk contributor.',
-      });
-    } else if (glucoseVal > 100) {
-      impacts.push({
-        factor: 'Plasma Glucose',
-        impact: 'negative',
-        value: `${glucoseVal} mg/dL`,
-        description: 'Impaired fasting glucose (Pre-diabetic zone).',
-      });
-    } else {
-      impacts.push({
-        factor: 'Plasma Glucose',
-        impact: 'positive',
-        value: `${glucoseVal} mg/dL`,
-        description: 'Healthy optimal glycemic range.',
-      });
-    }
-
-    // HbA1c Impact
-    if (hba1cVal >= 6.5) {
-      impacts.push({
-        factor: 'Glycated Hemoglobin (HbA1c)',
-        impact: 'negative',
-        value: `${hba1cVal}%`,
-        description: 'Sustained hyperglycemia indicator. Severe marker.',
-      });
-    } else if (hba1cVal >= 5.7) {
-      impacts.push({
-        factor: 'Glycated Hemoglobin (HbA1c)',
-        impact: 'negative',
-        value: `${hba1cVal}%`,
-        description: 'Elevated glycated hemoglobin. Pre-diabetic marker.',
-      });
-    } else {
-      impacts.push({
-        factor: 'Glycated Hemoglobin (HbA1c)',
-        impact: 'positive',
-        value: `${hba1cVal}%`,
-        description: 'Healthy cellular protein oxygen levels.',
-      });
-    }
-
-    // BMI Impact
-    if (currentBmi >= 30) {
-      impacts.push({
-        factor: 'Body Mass Index (BMI)',
-        impact: 'negative',
-        value: `${currentBmi}`,
-        description: 'Obesity levels heavily increase insulin resistance.',
-      });
-    } else if (currentBmi >= 25) {
-      impacts.push({
-        factor: 'Body Mass Index (BMI)',
-        impact: 'negative',
-        value: `${currentBmi}`,
-        description: 'Mild visceral weight elevates pancreatic stress.',
-      });
-    } else {
-      impacts.push({
-        factor: 'Body Mass Index (BMI)',
-        impact: 'positive',
-        value: `${currentBmi}`,
-        description: 'Healthy lean composition reduces insulin strain.',
-      });
-    }
-
-    // Activity protective factor
-    if (formData.activityLevel === 'active') {
-      impacts.push({
-        factor: 'Physical Activity',
-        impact: 'positive',
-        value: 'Highly Active',
-        description: 'Stimulates independent skeletal muscle GLUT-4 glucose clearing.',
-      });
-    } else if (formData.activityLevel === 'sedentary') {
-      impacts.push({
-        factor: 'Physical Activity',
-        impact: 'negative',
-        value: 'Sedentary',
-        description: 'Skeletal inactivity downregulates insulin receptor cells.',
-      });
-    }
-
-    // Family history
-    if (formData.familyHistory) {
-      impacts.push({
-        factor: 'Genetic Lineage',
-        impact: 'negative',
-        value: 'Relative History',
-        description: 'First-degree genetic history lowers baseline pancreatic resilience.',
-      });
-    }
-
-    // Tailor specific Medical Recommendations
-    const recommendations: string[] = [];
-    if (glucoseVal >= 126 || hba1cVal >= 6.5) {
-      recommendations.push('Schedule an urgent fasting plasma glucose/OGTT review with an endocrinologist.');
-      recommendations.push('Monitor daily blood glucose spikes prior to and 2 hours after standard meals.');
-    } else if (glucoseVal > 100 || hba1cVal >= 5.7) {
-      recommendations.push('Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.');
-      recommendations.push('Aim to reduce body mass index by 5-7% over the next 4 months.');
-    } else {
-      recommendations.push('Maintain current metabolic balance with regular physical activity and optimal hydration.');
-    }
-
-    if (systolicVal >= 130 || diastolicVal >= 80) {
-      recommendations.push('Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping.');
-    }
-
-    if (formData.activityLevel === 'sedentary') {
-      recommendations.push('Initiate 30 minutes of daily brisk aerobic walking to stimulate metabolic vascular clearance.');
-    }
-
-    if (formData.smoking === 'current') {
-      recommendations.push('Seek clinical support for immediate nicotine cessation; smoking doubles macrovascular cardiovascular risks.');
-    }
-
-    // Formulate medical clinical notes summary
-    let clinicalNotes = '';
-    if (riskLevel === 'High') {
-      clinicalNotes = 'Patient exhibits severe metabolic indicators, predominantly high glycemic blood concentrations and supporting genetic vulnerabilities. Immediate medical screening and insulin resistance review are heavily recommended.';
-    } else if (riskLevel === 'Moderate') {
-      clinicalNotes = 'Patient shows early metabolic dysregulation, placing them in the pre-diabetic risk zone. This state is highly reversible with intensive therapeutic lifestyle modifications, focused weight loss, and refined carbohydrate elimination.';
-    } else {
-      clinicalNotes = 'Patient demonstrates robust clinical homeostasis with healthy cell-receptive biomarkers. Current cardiovascular risk profile is highly protective against early diabetes development.';
-    }
-
-    setResult({
-      riskPercentage,
-      riskLevel,
-      recommendations,
-      impacts,
-      calculatedBMI: currentBmi,
-      clinicalNotes
-    });
-    
-    // Save to Firestore/LocalStorage timeline history
-    addPredictionRecord({
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + `, ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
-      riskPercentage,
-      riskLevel,
-      recommendations,
-      clinicalNotes,
-      age: ageVal,
-      gender: formData.gender,
-      bmi: currentBmi,
-      glucose: glucoseVal,
-      hba1c: hba1cVal,
-      systolicBP: systolicVal,
-      diastolicBP: diastolicVal,
-    }).catch(err => {
-      console.error("Failed to automatically record assessment entry:", err);
-    });
-
-    setIsAnalyzing(false);
+    runPrediction();
   };
 
   const loaderSteps = [
@@ -1031,9 +968,9 @@ export default function Prediction() {
       title: 'High Blood Pressure',
       description: 'Previously diagnosed high blood pressure.',
       icon: Heart,
-      active: formData.systolicBP >= 130 || formData.diastolicBP >= 85,
+      active: Number(formData.systolicBP) >= 130 || Number(formData.diastolicBP) >= 85,
       toggle: () => {
-        const isCurrentlyHigh = formData.systolicBP >= 130 || formData.diastolicBP >= 85;
+        const isCurrentlyHigh = Number(formData.systolicBP) >= 130 || Number(formData.diastolicBP) >= 85;
         setFormData(prev => ({
           ...prev,
           systolicBP: isCurrentlyHigh ? 115 : 135,
@@ -1321,9 +1258,19 @@ export default function Prediction() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
-              id="assessment-input-form"
+              className="w-full space-y-6"
             >
+              {/* Compact Information Banner */}
+              {showOcrWarningBanner && (
+                <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-3 shadow-[0_0_20px_rgba(239,68,68,0.05)]">
+                  <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+                  <div className="text-xs md:text-sm text-gray-300 font-medium">
+                    We extracted most values successfully. Please complete the highlighted fields below to continue.
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" id="assessment-input-form">
               {/* Left Column (70%): Input Sections */}
               <div className="lg:col-span-8 space-y-12">
                 
@@ -1369,9 +1316,18 @@ export default function Prediction() {
                         max="120"
                         value={formData.age}
                         onChange={handleInputChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 p-4 font-mono text-sm text-white focus:border-cyan-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                        className={`w-full rounded-xl border p-4 font-mono text-sm text-white focus:outline-none focus:ring-1 transition-all duration-300 ${
+                          missingFields.includes('age')
+                            ? `missing-field-highlight ${ocrPulseActive ? 'missing-field-pulse' : ''}`
+                            : 'border-white/10 bg-white/5 focus:border-cyan-500 focus:bg-white/10 focus:ring-cyan-500'
+                        }`}
                         placeholder="Enter your age"
                       />
+                      {missingFields.includes('age') && (
+                        <p className="text-[11px] text-red-400 font-medium mt-1 animate-pulse">
+                          {uploadedFile ? "This value was not found in the uploaded report. Please enter this value manually." : "Please enter this value manually."}
+                        </p>
+                      )}
                       <p className="text-[11px] text-gray-500">Enter your current age in years.</p>
                     </div>
 
@@ -1446,11 +1402,20 @@ export default function Prediction() {
                           max="250"
                           value={formData.height}
                           onChange={handleInputChange}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 p-4 pr-12 font-mono text-sm text-white focus:border-cyan-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                          className={`w-full rounded-xl border p-4 pr-12 font-mono text-sm text-white focus:outline-none focus:ring-1 transition-all duration-300 ${
+                            missingFields.includes('height')
+                              ? `missing-field-highlight ${ocrPulseActive ? 'missing-field-pulse' : ''}`
+                              : 'border-white/10 bg-white/5 focus:border-cyan-500 focus:bg-white/10 focus:ring-cyan-500'
+                          }`}
                           placeholder="e.g. 170"
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">cm</span>
                       </div>
+                      {missingFields.includes('height') && (
+                        <p className="text-[11px] text-red-400 font-medium mt-1 animate-pulse">
+                          {uploadedFile ? "This value was not found in the uploaded report. Please enter this value manually." : "Please enter this value manually."}
+                        </p>
+                      )}
                       <p className="text-[11px] text-gray-500">Enter your height in centimeters.</p>
                     </div>
 
@@ -1476,11 +1441,20 @@ export default function Prediction() {
                           max="250"
                           value={formData.weight}
                           onChange={handleInputChange}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 p-4 pr-12 font-mono text-sm text-white focus:border-cyan-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                          className={`w-full rounded-xl border p-4 pr-12 font-mono text-sm text-white focus:outline-none focus:ring-1 transition-all duration-300 ${
+                            missingFields.includes('weight')
+                              ? `missing-field-highlight ${ocrPulseActive ? 'missing-field-pulse' : ''}`
+                              : 'border-white/10 bg-white/5 focus:border-cyan-500 focus:bg-white/10 focus:ring-cyan-500'
+                          }`}
                           placeholder="e.g. 70"
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">kg</span>
                       </div>
+                      {missingFields.includes('weight') && (
+                        <p className="text-[11px] text-red-400 font-medium mt-1 animate-pulse">
+                          {uploadedFile ? "This value was not found in the uploaded report. Please enter this value manually." : "Please enter this value manually."}
+                        </p>
+                      )}
                       <p className="text-[11px] text-gray-500">Enter your weight in kilograms.</p>
                     </div>
 
@@ -1546,13 +1520,23 @@ export default function Prediction() {
                       <input
                         type="number"
                         name="glucose"
+                        id="glucose"
                         min="50"
                         max="400"
                         value={formData.glucose}
                         onChange={handleInputChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 p-4 font-mono text-sm text-white focus:border-cyan-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                        className={`w-full rounded-xl border p-4 font-mono text-sm text-white focus:outline-none focus:ring-1 transition-all duration-300 ${
+                          missingFields.includes('glucose')
+                            ? `missing-field-highlight ${ocrPulseActive ? 'missing-field-pulse' : ''}`
+                            : 'border-white/10 bg-white/5 focus:border-cyan-500 focus:bg-white/10 focus:ring-cyan-500'
+                        }`}
                         placeholder="e.g. 100"
                       />
+                      {missingFields.includes('glucose') && (
+                        <p className="text-[11px] text-red-400 font-medium mt-1 animate-pulse">
+                          {uploadedFile ? "This value was not found in the uploaded report. Please enter this value manually." : "Please enter this value manually."}
+                        </p>
+                      )}
                       <p className="text-[11px] text-gray-500">Enter the value from your recent blood test report.</p>
                     </div>
 
@@ -1575,14 +1559,24 @@ export default function Prediction() {
                       <input
                         type="number"
                         name="hba1c"
+                        id="hba1c"
                         step="0.1"
                         min="4"
                         max="16"
                         value={formData.hba1c}
                         onChange={handleInputChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 p-4 font-mono text-sm text-white focus:border-cyan-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                        className={`w-full rounded-xl border p-4 font-mono text-sm text-white focus:outline-none focus:ring-1 transition-all duration-300 ${
+                          missingFields.includes('hba1c')
+                            ? `missing-field-highlight ${ocrPulseActive ? 'missing-field-pulse' : ''}`
+                            : 'border-white/10 bg-white/5 focus:border-cyan-500 focus:bg-white/10 focus:ring-cyan-500'
+                        }`}
                         placeholder="e.g. 5.7"
                       />
+                      {missingFields.includes('hba1c') && (
+                        <p className="text-[11px] text-red-400 font-medium mt-1 animate-pulse">
+                          {uploadedFile ? "This value was not found in the uploaded report. Please enter this value manually." : "Please enter this value manually."}
+                        </p>
+                      )}
                       <p className="text-[11px] text-gray-500">Enter the value from your recent blood test report.</p>
                     </div>
 
@@ -1605,13 +1599,23 @@ export default function Prediction() {
                       <input
                         type="number"
                         name="systolicBP"
+                        id="systolicBP"
                         min="80"
                         max="220"
                         value={formData.systolicBP}
                         onChange={handleInputChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 p-4 font-mono text-sm text-white focus:border-cyan-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                        className={`w-full rounded-xl border p-4 font-mono text-sm text-white focus:outline-none focus:ring-1 transition-all duration-300 ${
+                          missingFields.includes('systolicBP')
+                            ? `missing-field-highlight ${ocrPulseActive ? 'missing-field-pulse' : ''}`
+                            : 'border-white/10 bg-white/5 focus:border-cyan-500 focus:bg-white/10 focus:ring-cyan-500'
+                        }`}
                         placeholder="e.g. 120"
                       />
+                      {missingFields.includes('systolicBP') && (
+                        <p className="text-[11px] text-red-400 font-medium mt-1 animate-pulse">
+                          {uploadedFile ? "This value was not found in the uploaded report. Please enter this value manually." : "Please enter this value manually."}
+                        </p>
+                      )}
                       <p className="text-[11px] text-gray-500">Enter the values shown on your BP monitor.</p>
                     </div>
 
@@ -1634,13 +1638,23 @@ export default function Prediction() {
                       <input
                         type="number"
                         name="diastolicBP"
+                        id="diastolicBP"
                         min="40"
                         max="130"
                         value={formData.diastolicBP}
                         onChange={handleInputChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 p-4 font-mono text-sm text-white focus:border-cyan-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                        className={`w-full rounded-xl border p-4 font-mono text-sm text-white focus:outline-none focus:ring-1 transition-all duration-300 ${
+                          missingFields.includes('diastolicBP')
+                            ? `missing-field-highlight ${ocrPulseActive ? 'missing-field-pulse' : ''}`
+                            : 'border-white/10 bg-white/5 focus:border-cyan-500 focus:bg-white/10 focus:ring-cyan-500'
+                        }`}
                         placeholder="e.g. 80"
                       />
+                      {missingFields.includes('diastolicBP') && (
+                        <p className="text-[11px] text-red-400 font-medium mt-1 animate-pulse">
+                          {uploadedFile ? "This value was not found in the uploaded report. Please enter this value manually." : "Please enter this value manually."}
+                        </p>
+                      )}
                       <p className="text-[11px] text-gray-500">Enter the values shown on your BP monitor.</p>
                     </div>
                   </div>
@@ -1847,9 +1861,11 @@ export default function Prediction() {
                       className={`relative rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-300 cursor-pointer ${
                         isDragging 
                           ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_15px_rgba(6,182,212,0.25)]' 
-                          : uploadedFile 
-                            ? 'border-emerald-500/50 bg-emerald-500/5' 
-                            : 'border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_15px_rgba(6,182,212,0.1)] bg-white/5'
+                          : uploadValidationError
+                            ? 'border-red-500/50 bg-red-500/5 shadow-[0_0_15px_rgba(239,68,68,0.15)]'
+                            : uploadedFile 
+                              ? 'border-emerald-500/50 bg-emerald-500/5' 
+                              : 'border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_15px_rgba(6,182,212,0.1)] bg-white/5'
                       }`}
                     >
                       <input 
@@ -1877,15 +1893,31 @@ export default function Prediction() {
                           </div>
                         ) : uploadedFile ? (
                           <>
-                            <div className="p-3 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
-                              <FileText className="h-8 w-8" />
-                            </div>
-                            <p className="font-display text-xs font-bold text-white max-w-[200px] truncate">
-                              {uploadedFile.name}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-mono">
-                              {(uploadedFile.size / 1024).toFixed(1)} KB
-                            </p>
+                            {uploadValidationError ? (
+                              <>
+                                <div className="p-3 bg-red-500/10 rounded-full text-red-400 border border-red-500/20">
+                                  <ShieldAlert className="h-8 w-8" />
+                                </div>
+                                <p className="font-display text-xs font-bold text-white max-w-[200px] truncate">
+                                  {uploadedFile.name}
+                                </p>
+                                <p className="text-xs text-red-400 font-medium max-w-[280px] mt-1 px-4 leading-relaxed">
+                                  {uploadValidationError}
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <div className="p-3 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
+                                  <FileText className="h-8 w-8" />
+                                </div>
+                                <p className="font-display text-xs font-bold text-white max-w-[200px] truncate">
+                                  {uploadedFile.name}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-mono">
+                                  {(uploadedFile.size / 1024).toFixed(1)} KB
+                                </p>
+                              </>
+                            )}
                           </>
                         ) : (
                           <>
@@ -1907,6 +1939,8 @@ export default function Prediction() {
                           onClick={(e) => {
                             e.preventDefault();
                             setUploadedFile(null);
+                            setUploadValidationError(null);
+                            clearForm();
                           }}
                           className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all duration-300"
                           title="Remove File"
@@ -1954,8 +1988,8 @@ export default function Prediction() {
                         <span className={`px-2.5 py-1 rounded text-[10px] font-bold tracking-wide ${formData.familyHistory ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
                           Family Hist: {formData.familyHistory ? 'YES' : 'NO'}
                         </span>
-                        <span className={`px-2.5 py-1 rounded text-[10px] font-bold tracking-wide ${(formData.systolicBP >= 130 || formData.diastolicBP >= 85) ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
-                          High Blood Pressure: {(formData.systolicBP >= 130 || formData.diastolicBP >= 85) ? 'YES' : 'NO'}
+                        <span className={`px-2.5 py-1 rounded text-[10px] font-bold tracking-wide ${(Number(formData.systolicBP) >= 130 || Number(formData.diastolicBP) >= 85) ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                          High Blood Pressure: {(Number(formData.systolicBP) >= 130 || Number(formData.diastolicBP) >= 85) ? 'YES' : 'NO'}
                         </span>
                         {heartDisease && (
                           <span className="px-2.5 py-1 rounded text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 font-bold tracking-wide">
@@ -2013,7 +2047,8 @@ export default function Prediction() {
                 </div>
 
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
           )}
         </AnimatePresence>
       </div>

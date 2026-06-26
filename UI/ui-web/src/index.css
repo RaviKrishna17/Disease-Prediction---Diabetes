@@ -380,3 +380,35 @@ a.bg-gradient-to-r:hover,
   transform: translateY(-1.5px) !important;
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.22) !important;
 }
+
+/* Missing field highlight styling */
+.missing-field-highlight {
+  border: 2px solid #111111 !important;
+  box-shadow: 0 0 8px rgba(17, 17, 17, 0.3) !important;
+  background-color: rgba(17, 17, 17, 0.02) !important;
+}
+
+.missing-field-highlight:focus {
+  border-color: #111111 !important;
+  box-shadow: 0 0 10px rgba(17, 17, 17, 0.45) !important;
+}
+
+/* Subtle border and shadow pulse animation */
+@keyframes missing-field-glow-pulse {
+  0% {
+    box-shadow: 0 0 8px rgba(17, 17, 17, 0.3) !important;
+    border-color: #111111 !important;
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(17, 17, 17, 0.6) !important;
+    border-color: #444444 !important;
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(17, 17, 17, 0.3) !important;
+    border-color: #111111 !important;
+  }
+}
+
+.missing-field-pulse {
+  animation: missing-field-glow-pulse 1.2s ease-in-out infinite;
+}

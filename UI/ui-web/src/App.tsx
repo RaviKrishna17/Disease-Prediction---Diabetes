@@ -62,11 +62,31 @@ function AnimatedAppRoutes() {
         className="w-full flex-grow flex flex-col justify-start relative z-10"
       >
         <Routes location={location}>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/risk-factors" element={<RiskFactors />} />
-          <Route path="/symptoms" element={<Symptoms />} />
-          <Route path="/prevention" element={<Prevention />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="/about" element={
+            <ProtectedRoute>
+              <About />
+            </ProtectedRoute>
+          } />
+          <Route path="/risk-factors" element={
+            <ProtectedRoute>
+              <RiskFactors />
+            </ProtectedRoute>
+          } />
+          <Route path="/symptoms" element={
+            <ProtectedRoute>
+              <Symptoms />
+            </ProtectedRoute>
+          } />
+          <Route path="/prevention" element={
+            <ProtectedRoute>
+              <Prevention />
+            </ProtectedRoute>
+          } />
           <Route path="/login" element={<Login />} />
           
           {/* Protected Routes */}
