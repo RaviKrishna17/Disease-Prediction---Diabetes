@@ -1,6 +1,4 @@
-"""
-Disease Prediction System - Cleaned Retraining ML Pipeline
-"""
+
 
 import sys
 from pathlib import Path

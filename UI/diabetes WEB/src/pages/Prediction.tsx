@@ -516,6 +516,31 @@ interface MedicalCheckboxProps {
   checked: boolean;
 }
 
+interface UploadValidationError {
+  error: string;
+  error_code?: string;
+  message?: string;
+  guidance?: string;
+  supported?: string[];
+  not_supported?: string[];
+  validation?: {
+    medical_keywords_found?: number;
+    total_validation_rules?: number;
+    passed_validation_rules?: number;
+    medical_confidence?: number;
+    threshold?: number;
+    reason?: string;
+  };
+}
+
+interface MedicalValidationMeta {
+  verified: boolean;
+  medical_confidence?: number;
+  total_validation_rules?: number;
+  passed_validation_rules?: number;
+  medical_keywords_found?: number;
+}
+
 function MedicalCheckbox({ checked }: MedicalCheckboxProps) {
   return (
     <div className="relative shrink-0 flex items-center justify-center">
@@ -554,6 +579,9 @@ function MedicalCheckbox({ checked }: MedicalCheckboxProps) {
 
 export default function Prediction() {
   const { addPredictionRecord } = useHistory();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isUploadRequestInFlightRef = useRef(false);
+  const lastProcessedFileSignatureRef = useRef<string | null>(null);
   // 1. Core input states
   const [formData, setFormData] = useState<PatientData>({
     age: '',
@@ -586,6 +614,8 @@ export default function Prediction() {
   const [isDragging, setIsDragging] = useState(false);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [parsingStepText, setParsingStepText] = useState('');
+  const [reportValidationError, setReportValidationError] = useState<UploadValidationError | null>(null);
+  const [medicalValidationMeta, setMedicalValidationMeta] = useState<MedicalValidationMeta | null>(null);
 
   // 5. Info Tooltip State & Renderer
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -670,8 +700,22 @@ export default function Prediction() {
   };
 
   const processUploadedFile = async (file: File) => {
+    const fileSignature = `${file.name}:${file.size}:${file.lastModified}`;
+    if (isUploadRequestInFlightRef.current && lastProcessedFileSignatureRef.current === fileSignature) {
+      return;
+    }
+
+    if (lastProcessedFileSignatureRef.current === fileSignature && !reportValidationError) {
+      return;
+    }
+
+    isUploadRequestInFlightRef.current = true;
+    lastProcessedFileSignatureRef.current = fileSignature;
     setIsParsingFile(true);
-    setParsingStepText('Uploading clinical report to secure server...');
+    setParsingStepText('Extracting first-page text and validating medical report structure...');
+    setReportValidationError(null);
+    setMedicalValidationMeta(null);
+    setResult(null);
     
     try {
       const formDataObj = new FormData();
@@ -684,10 +728,19 @@ export default function Prediction() {
       
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 422 && data?.error_code === 'INVALID_MEDICAL_REPORT') {
+          setReportValidationError(data as UploadValidationError);
+          return;
+        }
         throw new Error(data.error || 'Failed to parse lab report.');
       }
       
-      setParsingStepText('Biomarkers parsed successfully. Loading...');
+      setParsingStepText('Medical report verified. Loading biomarkers...');
+      setMedicalValidationMeta(
+        data.medical_validation || {
+          verified: true
+        }
+      );
       
       setFormData({
         age: data.age !== undefined && data.age !== null ? String(data.age) : '',
@@ -717,29 +770,45 @@ export default function Prediction() {
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'An error occurred during medical report parsing.');
-      clearForm();
     } finally {
+      isUploadRequestInFlightRef.current = false;
       setIsParsingFile(false);
       setParsingStepText('');
     }
   };
 
+  const processSelectedFile = (file: File) => {
+    setUploadedFile(file);
+    processUploadedFile(file);
+  };
+
+  const openFileDialog = () => {
+    if (isParsingFile) {
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    if (isParsingFile) {
+      return;
+    }
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      setUploadedFile(file);
-      processUploadedFile(file);
+      processSelectedFile(file);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setUploadedFile(file);
-      processUploadedFile(file);
+    const input = e.target;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      processSelectedFile(file);
     }
+    // Reset so selecting the same file again still triggers a change event.
+    input.value = '';
   };
 
   const clearForm = () => {
@@ -765,10 +834,18 @@ export default function Prediction() {
     setResult(null);
     setIsParsingFile(false);
     setParsingStepText('');
+    setReportValidationError(null);
+    setMedicalValidationMeta(null);
+    lastProcessedFileSignatureRef.current = null;
+    isUploadRequestInFlightRef.current = false;
   };
 
   // ML Risk Calculation Emulator
   const calculatePrediction = () => {
+    if (uploadedFile && (!medicalValidationMeta || !medicalValidationMeta.verified || reportValidationError)) {
+      return;
+    }
+
     // If a medical report is uploaded, we do NOT require Age or any other input requirement to be filled out.
     if (!uploadedFile && (formData.age === '' || Number(formData.age) <= 0)) {
       const ageInput = document.getElementById('age');
@@ -1168,7 +1245,7 @@ export default function Prediction() {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    onClick={() => document.getElementById('report-file-input')?.click()}
+                    onClick={openFileDialog}
                     className={`relative rounded-3xl border border-white/10 p-8 md:p-14 text-center transition-all duration-500 cursor-pointer group ${
                       isDragging 
                         ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_40px_rgba(6,182,212,0.2)]' 
@@ -1176,13 +1253,14 @@ export default function Prediction() {
                     }`}
                   >
                     <input 
+                      ref={fileInputRef}
                       type="file" 
                       id="report-file-input"
                       onChange={handleFileChange}
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                       className="hidden" 
                     />
-                    <label htmlFor="report-file-input" className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                    <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
                       {isParsingFile ? (
                         <div className="flex flex-col items-center justify-center gap-4 w-full py-4">
                           <div className="relative mb-2">
@@ -1221,6 +1299,104 @@ export default function Prediction() {
                     </label>
                   </motion.div>
                 </div>
+              ) : reportValidationError ? (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  <div className="lg:col-span-8 space-y-8">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-3xl glass-panel p-6 md:p-8 border border-red-500/20 space-y-5"
+                    >
+                      <div className="space-y-2 border-b border-white/5 pb-4">
+                        <h3 className="font-display text-lg font-bold text-red-400 uppercase tracking-wide">
+                          Invalid Medical Report
+                        </h3>
+                        <p className="text-sm text-gray-300">
+                          The uploaded file does not appear to be a valid medical report.
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Please upload a hospital laboratory report or clinical report containing diabetes-related health information.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-2">
+                          <p className="text-[10px] font-mono tracking-wider text-emerald-400 uppercase">Supported</p>
+                          {(reportValidationError.supported || [
+                            'Blood Test Report',
+                            'HbA1c Report',
+                            'Clinical Laboratory Report',
+                            'Diagnostic Report'
+                          ]).map((item) => (
+                            <p key={item} className="text-xs text-gray-200">✓ {item}</p>
+                          ))}
+                        </div>
+                        <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-2">
+                          <p className="text-[10px] font-mono tracking-wider text-red-400 uppercase">Not Supported</p>
+                          {(reportValidationError.not_supported || [
+                            'Resume',
+                            'Project Report',
+                            'Assignment',
+                            'Book',
+                            'Notes',
+                            'Invoice',
+                            'Presentation',
+                            'Hackathon Problem Statement'
+                          ]).map((item) => (
+                            <p key={item} className="text-xs text-gray-200">✗ {item}</p>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl bg-white/5 border border-white/5 p-4">
+                        <p className="text-[10px] font-mono tracking-wider text-cyan-400 uppercase">Medical Validation Summary</p>
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300">
+                          <p>Medical Keywords Found: <span className="text-white font-semibold">{reportValidationError.validation?.medical_keywords_found ?? 0}</span></p>
+                          <p>Total Validation Rules: <span className="text-white font-semibold">{reportValidationError.validation?.total_validation_rules ?? 22}</span></p>
+                          <p>Medical Confidence: <span className="text-white font-semibold">{reportValidationError.validation?.medical_confidence ?? 0}%</span></p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  <div className="lg:col-span-4 lg:sticky lg:top-6 self-start space-y-6">
+                    <div className="rounded-3xl glass-panel p-6 border border-white/10 space-y-6">
+                      <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-cyan-400" />
+                          <h3 className="font-display text-sm font-bold text-white tracking-wider uppercase">
+                            Uploaded Document
+                          </h3>
+                        </div>
+                        <button
+                          onClick={clearForm}
+                          className="text-xs font-mono text-red-400 hover:text-red-300 font-semibold cursor-pointer"
+                        >
+                          Change
+                        </button>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/5 relative">
+                        <p className="font-display text-xs font-bold text-white truncate max-w-[200px]">
+                          {uploadedFile.name}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-mono mt-0.5">
+                          {(uploadedFile.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+
+                      <div className="pt-2">
+                        <button
+                          onClick={clearForm}
+                          className="w-full relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 px-8 py-4 shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:shadow-[0_0_35px_rgba(6,182,212,0.55)] hover:scale-[1.02] transition-all duration-300 cursor-pointer text-white font-bold uppercase tracking-wider text-xs font-display"
+                        >
+                          <UploadCloud className="h-4 w-4 text-white" />
+                          <span>Upload Another Report</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 /* File is Uploaded: Show 2-Column Screen */
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1241,7 +1417,7 @@ export default function Prediction() {
                           </h3>
                         </div>
                         <span className="font-mono text-[10px] bg-emerald-500/10 border border-emerald-500/20 rounded px-2.5 py-1 text-emerald-400 font-bold uppercase flex items-center gap-1.5">
-                          <Check className="h-3 w-3" /> Successfully Parsed
+                          <Check className="h-3 w-3" /> Medical Report Verified
                         </span>
                       </div>
 
@@ -1390,7 +1566,7 @@ export default function Prediction() {
                       <div className="pt-2">
                         <button
                           onClick={calculatePrediction}
-                          disabled={isParsingFile}
+                          disabled={isParsingFile || !medicalValidationMeta?.verified}
                           className="w-full relative flex items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 px-8 py-4 shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:shadow-[0_0_35px_rgba(6,182,212,0.55)] hover:scale-[1.02] transition-all duration-300 cursor-pointer text-white font-bold uppercase tracking-wider text-xs font-display disabled:opacity-50"
                           id="prediction-run-btn"
                         >

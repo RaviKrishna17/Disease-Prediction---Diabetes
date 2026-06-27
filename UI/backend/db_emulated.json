@@ -1816,6 +1816,102 @@
           ],
           "calculatedBMI": 26.4,
           "clinicalNotes": "Patient exhibits severe metabolic indicators, predominantly high glycemic blood concentrations and supporting genetic vulnerabilities. Immediate medical screening and insulin resistance review are heavily recommended."
+        },
+        "DS-811": {
+          "id": "DS-811",
+          "date": "June 27, 2026, 11:06 PM",
+          "prediction": "Pre-Diabetes",
+          "risk": "High",
+          "probability": 0.7999,
+          "confidence": "80%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 80,
+          "riskLevel": "High",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "positive",
+              "value": "98.0 mg/dL",
+              "description": "Healthy optimal glycemic range."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "5.8%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.4",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.4,
+          "clinicalNotes": "Patient exhibits severe metabolic indicators, predominantly high glycemic blood concentrations and supporting genetic vulnerabilities. Immediate medical screening and insulin resistance review are heavily recommended."
+        },
+        "DS-276": {
+          "id": "DS-276",
+          "date": "June 27, 2026, 11:14 PM",
+          "prediction": "Pre-Diabetes",
+          "risk": "High",
+          "probability": 0.7999,
+          "confidence": "80%",
+          "recommendation": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "riskPercentage": 80,
+          "riskLevel": "High",
+          "recommendations": [
+            "Implement a structured low-glycemic dietary model, omitting simple sugars and refined flours.",
+            "Aim to reduce body mass index by 5-7% over the next 4 months.",
+            "Limit dietary sodium and obtain a 24-hour ambulatory blood pressure mapping."
+          ],
+          "impacts": [
+            {
+              "factor": "Plasma Glucose",
+              "impact": "positive",
+              "value": "98.0 mg/dL",
+              "description": "Healthy optimal glycemic range."
+            },
+            {
+              "factor": "Glycated Hemoglobin (HbA1c)",
+              "impact": "negative",
+              "value": "5.8%",
+              "description": "Elevated glycated hemoglobin. Pre-diabetic marker."
+            },
+            {
+              "factor": "Body Mass Index (BMI)",
+              "impact": "negative",
+              "value": "26.4",
+              "description": "Mild visceral weight elevates pancreatic stress."
+            },
+            {
+              "factor": "Genetic Lineage",
+              "impact": "negative",
+              "value": "Relative History",
+              "description": "First-degree genetic history lowers baseline pancreatic resilience."
+            }
+          ],
+          "calculatedBMI": 26.4,
+          "clinicalNotes": "Patient exhibits severe metabolic indicators, predominantly high glycemic blood concentrations and supporting genetic vulnerabilities. Immediate medical screening and insulin resistance review are heavily recommended."
         }
       }
     }

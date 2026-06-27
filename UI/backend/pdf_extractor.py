@@ -2,6 +2,7 @@ import os
 import re
 import json
 from pathlib import Path
+from typing import Dict, List, Set, Tuple
 from PIL import Image
 import pypdf
 import pdfplumber
@@ -247,6 +248,148 @@ def extract_text_from_image(file_path):
         print(f"Pytesseract extraction failed: {e}")
         return ""
 
+
+MEDICAL_VALIDATION_THRESHOLD = 0.60
+MEDICAL_VALIDATION_RULES_TOTAL = 22
+
+MEDICAL_KEYWORDS = [
+    "patient", "hospital", "laboratory", "lab", "diagnostic", "blood test",
+    "pathology", "clinical report", "medical record", "doctor", "diagnosis",
+    "hba1c", "glucose", "blood glucose", "bmi", "blood pressure", "reference range",
+    "age", "gender", "sex", "specimen", "result", "fasting", "plasma",
+    "diabetic", "prediabetic", "clinical", "pathologist"
+]
+
+MEDICAL_HEADINGS = [
+    "patient details", "patient information", "clinical summary", "lab report",
+    "laboratory report", "investigation", "test results", "reference range",
+    "diagnosis", "impression", "observations", "medical history"
+]
+
+MEDICAL_UNITS = ["mg/dl", "mmhg", "mmol/l", "mmol/l", "mmol", "kg/m", "%", "g/dl"]
+
+NON_MEDICAL_RED_FLAGS = [
+    "resume", "curriculum vitae", "assignment", "project report", "invoice",
+    "book", "notes", "presentation", "problem statement", "hackathon",
+    "receipt", "portfolio", "syllabus", "course", "chapter"
+]
+
+
+def _normalize_text(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "")).strip().lower()
+
+
+def extract_first_page_text(file_path):
+    """Extract text from the first page only (PDF), with fallback parser."""
+    text = ""
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            if pdf.pages:
+                page_text = pdf.pages[0].extract_text()
+                if page_text:
+                    text = page_text
+    except Exception as e:
+        print(f"pdfplumber first-page extraction failed: {e}")
+
+    if text.strip():
+        return text
+
+    try:
+        with open(file_path, 'rb') as f:
+            reader = pypdf.PdfReader(f)
+            if reader.pages:
+                page_text = reader.pages[0].extract_text()
+                if page_text:
+                    text = page_text
+    except Exception as e:
+        print(f"pypdf first-page extraction failed: {e}")
+
+    return text
+
+
+def _matched_keywords(text_lower: str, keywords: List[str]) -> Set[str]:
+    found: Set[str] = set()
+    for keyword in keywords:
+        if re.search(rf"\b{re.escape(keyword)}\b", text_lower):
+            found.add(keyword)
+    return found
+
+
+def evaluate_medical_report_text(text: str) -> Dict[str, object]:
+    normalized = _normalize_text(text)
+    lines = [line.strip() for line in (text or "").splitlines() if line.strip()]
+    title = lines[0].lower() if lines else ""
+    headings_blob = " ".join(lines[:20]).lower()
+
+    matched_medical = _matched_keywords(normalized, MEDICAL_KEYWORDS)
+    matched_headings = _matched_keywords(headings_blob, MEDICAL_HEADINGS)
+    matched_units = _matched_keywords(normalized, MEDICAL_UNITS)
+    matched_red_flags = _matched_keywords(normalized, NON_MEDICAL_RED_FLAGS)
+
+    numeric_with_units = re.findall(r"\b\d+(?:\.\d+)?\s*(?:mg/dl|mmhg|mmol/l|%)\b", normalized)
+    glucose_pattern = re.search(r"\b(?:glucose|blood\s+glucose|fasting\s+glucose)\b[^\n]{0,40}\b\d{2,3}(?:\.\d+)?\b", normalized)
+    hba1c_pattern = re.search(r"\b(?:hba1c|hb\s*a1c)\b[^\n]{0,40}\b\d(?:\.\d+)?\b", normalized)
+    bp_pattern = re.search(r"\b\d{2,3}\s*/\s*\d{2,3}\b", normalized)
+
+    rule_checks: List[Tuple[str, bool]] = [
+        ("has_patient_term", bool(re.search(r"\bpatient\b", normalized))),
+        ("has_hospital_or_lab_term", bool(re.search(r"\b(hospital|laboratory|lab)\b", normalized))),
+        ("has_doctor_term", bool(re.search(r"\b(doctor|dr\.|physician|pathologist)\b", normalized))),
+        ("has_report_term", bool(re.search(r"\b(report|clinical\s+report|diagnostic|pathology)\b", normalized))),
+        ("has_blood_test_term", bool(re.search(r"\b(blood\s+test|laboratory\s+test|test\s+result)\b", normalized))),
+        ("has_diabetes_context", bool(re.search(r"\b(diabetes|diabetic|prediabetic|glucose|hba1c)\b", normalized))),
+        ("has_demographics", bool(re.search(r"\b(age|gender|sex)\b", normalized))),
+        ("has_vitals", bool(re.search(r"\b(bmi|blood\s+pressure|mmhg)\b", normalized))),
+        ("has_reference_range", bool(re.search(r"\b(reference\s+range|reference\s+interval|normal\s+range)\b", normalized))),
+        ("has_medical_units", len(matched_units) > 0),
+        ("has_multiple_lab_values", len(numeric_with_units) >= 2),
+        ("has_glucose_value", glucose_pattern is not None),
+        ("has_hba1c_value", hba1c_pattern is not None),
+        ("has_bp_value", bp_pattern is not None),
+        ("title_is_medical", bool(re.search(r"\b(report|laboratory|clinical|diagnostic|medical|pathology)\b", title))),
+        ("contains_medical_headings", len(matched_headings) >= 1),
+        ("has_patient_section", bool(re.search(r"\b(patient\s+details|patient\s+information|demographics)\b", normalized))),
+        ("has_results_section", bool(re.search(r"\b(test\s+result|results|investigation)\b", normalized))),
+        ("has_interpretation_section", bool(re.search(r"\b(diagnosis|impression|clinical\s+summary|comment)\b", normalized))),
+        ("sufficient_content_length", len(normalized) >= 250),
+        ("no_non_medical_red_flags", len(matched_red_flags) == 0),
+        ("strong_medical_signal", len(matched_medical) >= 8),
+    ]
+
+    passed_rules = sum(1 for _, passed in rule_checks if passed)
+    confidence = passed_rules / MEDICAL_VALIDATION_RULES_TOTAL
+
+    hard_gate = (
+        len(matched_medical) >= 6 and
+        len(matched_red_flags) == 0 and
+        len(numeric_with_units) >= 2 and
+        (glucose_pattern is not None or hba1c_pattern is not None or bp_pattern is not None) and
+        (len(matched_headings) >= 1 or bool(re.search(r"\b(patient\s+details|results|diagnosis)\b", normalized)))
+    )
+
+    is_valid = hard_gate and confidence >= MEDICAL_VALIDATION_THRESHOLD
+    reason = (
+        f"Medical keywords found: {len(matched_medical)}. "
+        f"Rules passed: {passed_rules}/{MEDICAL_VALIDATION_RULES_TOTAL}. "
+        f"Red flags: {len(matched_red_flags)}."
+    )
+
+    return {
+        "is_valid": is_valid,
+        "confidence": round(confidence, 4),
+        "reason": reason,
+        "title": lines[0] if lines else "",
+        "headings_found": sorted(list(matched_headings)),
+        "medical_keywords_found": sorted(list(matched_medical)),
+        "red_flags_found": sorted(list(matched_red_flags)),
+        "units_found": sorted(list(matched_units)),
+        "numeric_values_with_units": len(numeric_with_units),
+        "total_rules": MEDICAL_VALIDATION_RULES_TOTAL,
+        "passed_rules": passed_rules,
+        "threshold": MEDICAL_VALIDATION_THRESHOLD,
+        "rule_results": [{"rule": rule_name, "passed": passed} for rule_name, passed in rule_checks],
+    }
+
 def classify_with_keywords(text):
     if not text or not text.strip():
         return None, 0.0, "Empty document text"
@@ -362,43 +505,41 @@ def classify_with_gemini(file_path, mime_type):
 
 def validate_medical_report(file_path, mime_type):
     """
-    Validates if the file is a clinical/medical report using multiple methods:
-    Method 1: Local text extraction and keyword/red-flag scoring.
-    Method 2: Gemini 1.5 Flash AI-driven visual/textual document classification.
-    Returns (is_valid: bool, confidence_score: float, reason: str)
+    Production-grade pre-OCR medical report validation.
+    Returns (is_valid: bool, confidence_score: float, reason: str, details: dict)
     """
     print(f"Validating medical report status of {file_path} (Mime: {mime_type})...")
-    
-    # 1. Local text extraction based on file type
-    extracted_text = ""
+
     if mime_type == 'application/pdf':
-        extracted_text = extract_raw_text(file_path)
+        # Per validation flow, inspect first page text before any OCR extraction pipeline.
+        extracted_text = extract_first_page_text(file_path)
     elif mime_type.startswith('image/'):
         extracted_text = extract_text_from_image(file_path)
-        
-    keyword_valid, keyword_conf, keyword_reason = classify_with_keywords(extracted_text)
-    
-    # 2. Run Gemini AI classification if available
-    gemini_valid, gemini_conf, gemini_reason = None, 0.0, ""
-    if gemini_available:
-        print("Using Gemini 1.5 Flash for document classification...")
-        gemini_valid, gemini_conf, gemini_reason = classify_with_gemini(file_path, mime_type)
-        
-    # 3. Combine signals
-    # Case A: Both keyword and Gemini are available
-    if gemini_valid is not None:
-        if keyword_valid is False and keyword_conf == 0.0:
-            print(f"Rejected: {keyword_reason}")
-            return False, max(keyword_conf, gemini_conf), f"Keyword check rejected: {keyword_reason}. Gemini reason: {gemini_reason}"
-        
-        print(f"Gemini validation: {gemini_valid} (Confidence: {gemini_conf}). Reason: {gemini_reason}")
-        return gemini_valid, gemini_conf, gemini_reason
-        
-    # Case B: Only keyword check is available
-    if keyword_valid is not None:
-        print(f"Keyword validation: {keyword_valid} (Confidence: {keyword_conf}). Reason: {keyword_reason}")
-        return keyword_valid, keyword_conf, keyword_reason
-        
-    # Case C: Neither succeeded (e.g., image, no Gemini, no pytesseract text)
-    print("Indeterminate report. Rejecting for safety.")
-    return False, 0.0, "Cannot determine document type (neither text found nor Gemini available)"
+    else:
+        details = {
+            "is_valid": False,
+            "confidence": 0.0,
+            "reason": "Unsupported file type for medical validation.",
+            "total_rules": MEDICAL_VALIDATION_RULES_TOTAL,
+            "passed_rules": 0,
+            "threshold": MEDICAL_VALIDATION_THRESHOLD,
+            "medical_keywords_found": [],
+            "red_flags_found": [],
+        }
+        return False, 0.0, details["reason"], details
+
+    details = evaluate_medical_report_text(extracted_text)
+    print(
+        "Validation summary: "
+        f"keywords={len(details.get('medical_keywords_found', []))}, "
+        f"rules={details.get('passed_rules', 0)}/{details.get('total_rules', MEDICAL_VALIDATION_RULES_TOTAL)}, "
+        f"confidence={details.get('confidence', 0.0):.2f}, "
+        f"valid={details.get('is_valid', False)}"
+    )
+
+    return (
+        bool(details.get("is_valid", False)),
+        float(details.get("confidence", 0.0)),
+        str(details.get("reason", "Medical validation failed.")),
+        details,
+    )

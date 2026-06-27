@@ -96,6 +96,48 @@ export default function History() {
     }
   };
 
+  const toFiniteNumber = (value: unknown): number | null => {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const formatBMI = (value: unknown): string => {
+    const bmi = toFiniteNumber(value);
+    if (bmi === null) {
+      return '-- kg/m²';
+    }
+    return `${bmi.toFixed(1)} kg/m²`;
+  };
+
+  const formatAgeSex = (age: unknown, gender: string): string => {
+    const ageNum = toFiniteNumber(age);
+    const normalizedGender = gender ? `${gender}`.trim().toLowerCase() : '--';
+    const displayGender = normalizedGender === '--'
+      ? '--'
+      : normalizedGender.charAt(0).toUpperCase() + normalizedGender.slice(1);
+    return `${ageNum !== null ? Math.round(ageNum) : '--'} Yrs / ${displayGender}`;
+  };
+
+  const formatGlucose = (value: unknown): string => {
+    const glucose = toFiniteNumber(value);
+    if (glucose === null) {
+      return '-- mg/dL';
+    }
+    return `${Math.round(glucose)} mg/dL`;
+  };
+
+  const formatBloodPressure = (systolic: unknown, diastolic: unknown): string => {
+    const sys = toFiniteNumber(systolic);
+    const dia = toFiniteNumber(diastolic);
+
+    // Display only clinically plausible values to avoid malformed rendering like 2/20.
+    if (sys === null || dia === null || sys < 70 || sys > 260 || dia < 40 || dia > 160) {
+      return '-- / -- mmHg';
+    }
+
+    return `${Math.round(sys)} / ${Math.round(dia)} mmHg`;
+  };
+
   return (
     <div className="flex-grow w-full max-w-5xl mx-auto px-4 py-8 md:py-12">
       {/* Back to dashboard */}
@@ -225,22 +267,22 @@ export default function History() {
                     </div>
 
                     {/* Biometrics Preview row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/5 rounded-xl p-4 border border-white/5 flex-grow lg:max-w-md">
-                      <div className="space-y-0.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-4 gap-y-3 bg-white/5 rounded-xl p-4 border border-white/5 flex-grow lg:max-w-md">
+                      <div className="min-w-0 space-y-1">
                         <span className="font-mono text-[9px] tracking-wider text-gray-400 uppercase block">Age / Sex</span>
-                        <span className="text-white text-xs font-medium capitalize">{record.age} yrs / {record.gender}</span>
+                        <span className="text-white text-xs font-medium whitespace-nowrap block overflow-hidden text-ellipsis">{formatAgeSex(record.age, record.gender)}</span>
                       </div>
-                      <div className="space-y-0.5">
+                      <div className="min-w-0 space-y-1">
                         <span className="font-mono text-[9px] tracking-wider text-gray-400 uppercase block">BMI</span>
-                        <span className="text-white text-xs font-medium">{record.bmi}</span>
+                        <span className="text-white text-xs font-medium whitespace-nowrap block overflow-hidden text-ellipsis">{formatBMI(record.bmi)}</span>
                       </div>
-                      <div className="space-y-0.5">
+                      <div className="min-w-0 space-y-1">
                         <span className="font-mono text-[9px] tracking-wider text-gray-400 uppercase block">Fasting Glucose</span>
-                        <span className="text-white text-xs font-medium">{record.glucose} mg/dL</span>
+                        <span className="text-white text-xs font-medium whitespace-nowrap block overflow-hidden text-ellipsis">{formatGlucose(record.glucose)}</span>
                       </div>
-                      <div className="space-y-0.5">
+                      <div className="min-w-0 space-y-1">
                         <span className="font-mono text-[9px] tracking-wider text-gray-400 uppercase block">BP</span>
-                        <span className="text-white text-xs font-medium">{record.systolicBP}/{record.diastolicBP}</span>
+                        <span className="text-white text-xs font-medium whitespace-nowrap block overflow-hidden text-ellipsis">{formatBloodPressure(record.systolicBP, record.diastolicBP)}</span>
                       </div>
                     </div>
 

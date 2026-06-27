@@ -736,13 +736,42 @@ def upload_report_endpoint():
             mime_type = 'image/jpeg'
             
         # Validate that the file is a clinical medical laboratory report
-        is_valid, conf, val_reason = validate_medical_report(temp_path, mime_type)
+        is_valid, conf, val_reason, validation_details = validate_medical_report(temp_path, mime_type)
         if not is_valid:
             # Cleanup file immediately
             if temp_path.exists():
                 os.remove(temp_path)
             return jsonify({
-                "error": "This file does not appear to be a medical laboratory report. Please upload a valid blood test or diabetes medical report."
+                "error": "Invalid Medical Report",
+                "error_code": "INVALID_MEDICAL_REPORT",
+                "message": "The uploaded file does not appear to be a valid medical report.",
+                "guidance": "Please upload a hospital laboratory report or clinical report containing diabetes-related health information.",
+                "supported": [
+                    "Blood Test Report",
+                    "HbA1c Report",
+                    "Clinical Laboratory Report",
+                    "Diagnostic Report"
+                ],
+                "not_supported": [
+                    "Resume",
+                    "Project Report",
+                    "Assignment",
+                    "Book",
+                    "Notes",
+                    "Invoice",
+                    "Presentation",
+                    "Hackathon Problem Statement"
+                ],
+                "validation": {
+                    "medical_keywords_found": len(validation_details.get("medical_keywords_found", [])),
+                    "total_validation_rules": validation_details.get("total_rules", 22),
+                    "passed_validation_rules": validation_details.get("passed_rules", 0),
+                    "medical_confidence": round(float(conf) * 100, 2),
+                    "threshold": round(float(validation_details.get("threshold", 0.60)) * 100, 2),
+                    "reason": val_reason,
+                    "matched_keywords": validation_details.get("medical_keywords_found", []),
+                    "red_flags_found": validation_details.get("red_flags_found", []),
+                }
             }), 422
             
         # Parse the biomarkers
@@ -766,6 +795,13 @@ def upload_report_endpoint():
         print(f"Weight {'OK' if extracted_data.get('weight') is not None else 'Missing'}\n")
             
         # Return successfully extracted data
+        extracted_data["medical_validation"] = {
+            "verified": True,
+            "medical_confidence": round(float(conf) * 100, 2),
+            "total_validation_rules": validation_details.get("total_rules", 22),
+            "passed_validation_rules": validation_details.get("passed_rules", 0),
+            "medical_keywords_found": len(validation_details.get("medical_keywords_found", [])),
+        }
         return jsonify(extracted_data)
         
     except Exception as e:
