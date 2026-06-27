@@ -1,0 +1,382 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Premium Clinical Coral & Scarlet Theme Colors inspired by the reference UI */
+  --color-medical-bg: #FCFAFA;       /* Primary Background - Soft Light Warm Rose Off-white */
+  --color-medical-dark: #F5EBEB;     /* Secondary Background - Faint Coral Warm Gray */
+  --color-medical-panel: #FFFFFF;    /* Cards */
+  --color-medical-border: #F1E3E3;   /* Border - Soft Coral Gray */
+
+  /* Override Cyan (maps Cyan utilities to Vibrant Red / Coral Brand Color scale from reference) */
+  --color-cyan-50: #FFF5F5;
+  --color-cyan-100: #FFF0F0;
+  --color-cyan-200: #FFE3E3;
+  --color-cyan-300: #FFC9C9;         /* Light Accent */
+  --color-cyan-400: #FF5252;         /* Vibrant Coral Red Accent */
+  --color-cyan-500: #EF4444;         /* Primary Brand: Stunning Coral Red */
+  --color-cyan-600: #DC2626;         /* Hover: Rich Crimson Red */
+  --color-cyan-700: #B91C1C;
+  --color-cyan-800: #991B1B;
+  --color-cyan-900: #7F1D1D;
+
+  /* Override Blue (maps Blue to Vibrant Red / Coral Brand scale) */
+  --color-blue-50: #FFF5F5;
+  --color-blue-100: #FFF0F0;
+  --color-blue-200: #FFE3E3;
+  --color-blue-300: #FFC9C9;
+  --color-blue-400: #FF5252;
+  --color-blue-500: #EF4444;         /* Vibrant Coral Red */
+  --color-blue-600: #DC2626;         /* Hover */
+  --color-blue-700: #B91C1C;
+  --color-blue-800: #991B1B;
+  --color-blue-900: #7F1D1D;
+
+  /* Override Indigo (maps Indigo to Vibrant Red / Coral Brand scale) */
+  --color-indigo-50: #FFF5F5;
+  --color-indigo-100: #FFF0F0;
+  --color-indigo-200: #FFE3E3;
+  --color-indigo-300: #FFC9C9;
+  --color-indigo-400: #FF5252;
+  --color-indigo-500: #EF4444;       /* Vibrant Coral Red */
+  --color-indigo-600: #DC2626;       /* Hover */
+  --color-indigo-700: #B91C1C;
+  --color-indigo-800: #991B1B;
+  --color-indigo-900: #7F1D1D;
+
+  /* Override Teal (maps Teal to Soft Rose / Coral scale) */
+  --color-teal-50: #FFF5F5;
+  --color-teal-100: #FFF0F0;
+  --color-teal-200: #FFE3E3;
+  --color-teal-300: #FFC9C9;
+  --color-teal-400: #FF5252;
+  --color-teal-500: #EF4444;
+  --color-teal-600: #DC2626;
+  --color-teal-700: #B91C1C;
+
+  /* Override Slate for highly professional, modern charcoal/slate text tones */
+  --color-slate-50: #F8FAFC;
+  --color-slate-100: #F1F5F9;
+  --color-slate-200: #E2E8F0;
+  --color-slate-300: #CBD5E1;         /* Muted Slate Text */
+  --color-slate-400: #94A3B8;         /* Secondary Slate Text */
+  --color-slate-500: #64748B;         /* Secondary Slate Text */
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;         /* Primary Slate Text */
+  --color-slate-800: #1E293B;         /* Primary Deep Charcoal Slate */
+  --color-slate-900: #0F172A;
+
+  /* Override Gray for smooth borders and clean UI boundaries */
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;          /* Muted Gray Text */
+  --color-gray-400: #9CA3AF;          /* Secondary Gray Text */
+  --color-gray-500: #6B7280;          /* Secondary Gray Text */
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;          /* Primary Deep Charcoal Text */
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+
+  /* Keep Success/Green as a vibrant secondary medical accent as seen in the reference UI */
+  --color-emerald-50: #ECFDF5;
+  --color-emerald-100: #D1FAE5;
+  --color-emerald-400: #34D399;
+  --color-emerald-500: #10B981;       /* Beautiful Vivid Medical Green */
+  --color-emerald-600: #059669;
+  --color-green-50: #ECFDF5;
+  --color-green-100: #D1FAE5;
+  --color-green-400: #34D399;
+  --color-green-500: #10B981;
+  --color-green-600: #059669;
+
+  /* Keep Warning/Orange as a brilliant diagnostic accent */
+  --color-orange-50: #FFF3E0;
+  --color-orange-100: #FFE0B2;
+  --color-orange-400: #FB8C00;
+  --color-orange-500: #FB8C00;
+  --color-orange-600: #F57C00;
+  --color-amber-50: #FFF3E0;
+  --color-amber-100: #FFE0B2;
+  --color-amber-400: #FB8C00;
+  --color-amber-500: #FB8C00;
+  --color-amber-600: #F57C00;
+
+  /* Danger overrides mapped cleanly for warnings */
+  --color-red-50: #FFEBEE;
+  --color-red-100: #FFCDD2;
+  --color-red-400: #E53935;
+  --color-red-500: #E53935;
+  --color-red-600: #D32F2F;
+  --color-rose-50: #FFEBEE;
+  --color-rose-100: #FFCDD2;
+  --color-rose-400: #E53935;
+  --color-rose-500: #E53935;
+  --color-rose-600: #D32F2F;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FCFAFA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* Global resets and body styling */
+html {
+  scroll-behavior: smooth;
+  background-color: #FCFAFA;
+  color: #1E293B;
+  font-family: var(--font-sans);
+}
+
+body {
+  overflow-x: hidden;
+  background-color: #FCFAFA;
+  /* Premium warm subtle mild red & slate gray radial background gradients */
+  background-image: 
+    radial-gradient(circle at 5% 15%, rgba(239, 68, 68, 0.025) 0%, transparent 40%),
+    radial-gradient(circle at 95% 85%, rgba(148, 163, 184, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(248, 250, 252, 0.45) 0%, #FCFAFA 100%);
+  background-attachment: fixed;
+}
+
+/* Almost invisible geometric medical grid pattern overlay */
+.grid-overlay {
+  background-size: 32px 32px;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.02) 0.5px, transparent 0.5px);
+  pointer-events: none;
+}
+
+/* Glassmorphism/Card utility configured for Premium Red/Coral Theme */
+.glass-panel {
+  background: #FFFFFF !important;
+  border: 1px solid #F1E3E3 !important; /* Soft reddish-gray border */
+  border-radius: 20px !important;
+  box-shadow: 0 10px 30px -5px rgba(239, 68, 68, 0.02), 0 4px 12px rgba(0, 0, 0, 0.015) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-hover:hover {
+  border-color: #EF4444 !important; /* Vibrant Red hover border */
+  box-shadow: 0 12px 36px -4px rgba(239, 68, 68, 0.06), 0 6px 20px rgba(0, 0, 0, 0.02) !important;
+  transform: translateY(-2px);
+}
+
+/* Remove glowing neon dropshadows/text shadows */
+.text-glow-cyan, .text-cyan-glow {
+  text-shadow: none !important;
+}
+
+.glow-glow-cyan {
+  box-shadow: none !important;
+}
+
+/* Pulse keyframes for animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes slow-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-slow-spin {
+  animation: slow-spin 35s linear infinite;
+}
+
+/* --- LIGHT THEME TEXT & COMPONENT OVERRIDES --- */
+/* Automatically ensures text in glass-panels has optimal readability in clinical light theme */
+
+/* General body text inside panels */
+.glass-panel, 
+.glass-panel p, 
+.glass-panel span, 
+.glass-panel div:not(.bg-gradient-to-r) {
+  color: #475569; /* Secondary Slate Text */
+}
+
+/* Headings */
+.glass-panel h1, 
+.glass-panel h2, 
+.glass-panel h3, 
+.glass-panel h4, 
+.glass-panel h5, 
+.glass-panel h6,
+.glass-panel .text-white,
+.glass-panel h1 span,
+.glass-panel h2 span,
+.glass-panel h3 span {
+  color: #1E293B !important; /* Primary Deep Charcoal Text */
+}
+
+/* Dimmer secondary/tertiary texts */
+.glass-panel .text-gray-400, 
+.glass-panel .text-slate-400, 
+.glass-panel .text-neutral-400,
+.glass-panel .text-gray-300,
+.glass-panel .text-slate-300 {
+  color: #94A3B8 !important; /* Muted Slate Text */
+}
+
+.glass-panel .text-gray-500,
+.glass-panel .text-slate-500,
+.glass-panel .text-cyan-400 {
+  color: #EF4444 !important; /* Primary Brand Red */
+}
+
+/* Inputs and interactive elements */
+input, select, textarea {
+  background-color: #FFFFFF !important;
+  color: #1E293B !important;
+  border: 1px solid #E2E8F0 !important; /* input border standard */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01) !important;
+  border-radius: 12px !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #EF4444 !important; /* Vibrant Red focus */
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94A3B8 !important; /* Muted slate placeholder */
+}
+
+/* Custom Portal Inputs with Premium Design & Interactions */
+.portal-input {
+  background-color: #F8FAFC !important;
+  color: #1E293B !important;
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  padding: 12px 42px 12px 16px !important; /* Right padding for embedded icon */
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+  width: 100% !important;
+  height: 48px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.portal-input:focus {
+  background-color: #FFFFFF !important;
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15) !important;
+  outline: none !important;
+}
+
+.portal-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.portal-input-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  pointer-events: none;
+  transition: color 0.2s ease;
+  z-index: 10;
+}
+
+.portal-input-container:focus-within .portal-input-icon {
+  color: #EF4444;
+}
+
+/* Custom options or dropdown select options */
+select option {
+  background-color: #FFFFFF !important;
+  color: #1E293B !important;
+}
+
+/* Button & interactive states */
+.glass-panel button:not(.bg-gradient-to-r):not(.bg-cyan-500):not(.bg-white) {
+  border-color: #F1E3E3;
+}
+
+.glass-panel .bg-white\/5 {
+  background-color: #FFF5F5 !important; /* Secondary Background */
+  border-color: #F1E3E3 !important;
+}
+
+.glass-panel .border-white\/5,
+.glass-panel .border-white\/10 {
+  border-color: #F1E3E3 !important;
+}
+
+.glass-panel .hover\:bg-white\/10:hover {
+  background-color: #FFF0F0 !important;
+}
+
+.glass-panel .hover\:border-white\/20:hover {
+  border-color: #E2E8F0 !important;
+}
+
+/* Profile cards or sidebars labels */
+.profile-card-label {
+  color: #94A3B8 !important; /* Muted Text */
+}
+
+.profile-card-value {
+  color: #1E293B !important; /* Primary Text */
+}
+
+/* Clean up hardcoded shadow glow parameters globally to match soft clinical shadow requirements */
+[class*="shadow-[0_0_35px_rgba"],
+[class*="shadow-[0_0_50px_rgba"] {
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.05) !important;
+}
+
+/* Standard button rounding to 16px as requested */
+button.bg-gradient-to-r,
+a.bg-gradient-to-r,
+.bg-gradient-to-r {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.12) !important;
+  transition: all 0.3s ease !important;
+}
+
+button.bg-gradient-to-r:hover,
+a.bg-gradient-to-r:hover,
+.bg-gradient-to-r:hover {
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.22) !important;
+}

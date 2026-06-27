@@ -1,433 +1,518 @@
 """
-Disease Prediction System - Training Pipeline (BRFSS2015 Migration)
-
-This script implements a production-ready machine learning pipeline for diabetes prediction
-using the BRFSS2015 Health Indicators dataset.
-It covers:
-1. In-depth analysis and summary statistics of the new dataset.
-2. Stratified sampling (30,000 samples) to handle scale and ensure fast, robust execution.
-3. Preprocessing: removing duplicate records and scaling features.
-4. Class imbalance handling: before vs. after comparison using SMOTE.
-5. Model training & hyperparameter tuning using Grid/Random Search on:
-   - Logistic Regression
-   - Random Forest
-   - XGBoost
-   - LightGBM
-   - CatBoost
-   - TensorFlow Neural Network (via custom scikit-learn wrapper)
-   - Voting Ensemble (soft voting of base estimators)
-   - Stacking Ensemble (meta-learner: Logistic Regression)
-6. Stratified 5-Fold Cross Validation.
-7. Weighted ranking model selection (CV Accuracy, Macro F1, Macro Recall).
-8. Generating the final comparison report and saving artifacts.
+Disease Prediction System - Cleaned Retraining ML Pipeline
 """
 
-import os
+import sys
 from pathlib import Path
+import os
 import warnings
-warnings.filterwarnings('ignore')
+import time
 import pickle
+import glob
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')  # Set non-interactive backend for headless environments
-import matplotlib.pyplot as plt
-import seaborn as sns
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+WORKSPACE_ROOT = PROJECT_ROOT.parent
+if str(WORKSPACE_ROOT) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_ROOT))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+warnings.filterwarnings('ignore')
 
 # Scikit-learn imports
-from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split, StratifiedKFold, RandomizedSearchCV
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
+    confusion_matrix, classification_report
+)
 
-# Oversampling & boosting frameworks
+# Resampling frameworks
 from imblearn.over_sampling import SMOTE
 import xgboost as xgb
 
-# Custom evaluation module
-import evaluate
+# Custom model wrapper from wrapper.py
+from disease_prediction.src.wrapper import OptimizedClassifierWrapper
 
-# Setup paths
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_PATH = PROJECT_ROOT / "data" / "diabetes_012_health_indicators_BRFSS2015.csv"
 MODELS_DIR = PROJECT_ROOT / "models"
-
-# Make sure models directory exists
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-def analyze_dataset(df):
-    """
-    Perform and display detailed EDA & statistics of the dataset.
-    """
-    print("\n" + "=" * 50)
-    print(" 1. DATASET ANALYSIS & STATISTICS ")
-    print("=" * 50)
-    print(f"Shape of the dataset: {df.shape[0]} rows, {df.shape[1]} columns")
-    print("\nColumn Names:")
-    print(df.columns.tolist())
-    
-    print("\nTarget Column (Diabetes_012) Distribution:")
-    counts = df['Diabetes_012'].value_counts()
-    pcts = df['Diabetes_012'].value_counts(normalize=True)
-    for cls in sorted(counts.index):
-        label = "No Diabetes (0.0)" if cls == 0.0 else ("Pre-diabetes (1.0)" if cls == 1.0 else "Diabetes (2.0)")
-        print(f"  - {label:<18}: {counts[cls]:>6} ({pcts[cls] * 100:.2f}%)")
-        
-    print("\nMissing Values Check:")
-    missing_total = df.isnull().sum().sum()
-    print(f"  Total missing values in dataset: {missing_total}")
-    
-    print("\nDuplicate Records Check:")
-    dup_total = df.duplicated().sum()
-    print(f"  Total duplicate records: {dup_total} ({dup_total / len(df) * 100:.2f}%)")
-    
-    print("\nSummary Statistics (Selected Columns):")
-    print(df.describe().T[['mean', 'std', 'min', '50%', 'max']].head(10))
-    print("=" * 50)
+FEATURE_NAMES = [
+    'HighBP', 'HighChol', 'CholCheck', 'BMI', 'Smoker', 'Stroke',
+    'HeartDiseaseorAttack', 'PhysActivity', 'Fruits', 'Veggies',
+    'HvyAlcoholConsump', 'AnyHealthcare', 'NoDocbcCost', 'GenHlth',
+    'MentHlth', 'PhysHlth', 'DiffWalk', 'Sex', 'Age', 'Education', 'Income'
+]
 
-def compare_smote(X_train, y_train, X_test, y_test, features):
-    """
-    Train a default XGBoost classifier before and after SMOTE to evaluate impact on class imbalance.
-    """
-    print("\n" + "=" * 50)
-    print(" 2. CLASS IMBALANCE HANDLING - SMOTE COMPARISON ")
-    print("=" * 50)
+def map_age_to_category(age_val):
+    if age_val < 25:
+        return 1.0
+    elif age_val >= 80:
+        return 13.0
+    else:
+        return float(int((age_val - 25) / 5) + 2)
+
+def discover_dataset(data_dir):
+    expected_path = data_dir.resolve()
+    existing_items = []
+    if data_dir.exists():
+        for root, dirs, files in os.walk(data_dir):
+            for d in dirs:
+                existing_items.append(str(Path(root) / d))
+            for f in files:
+                existing_items.append(str(Path(root) / f))
+                
+    csv_pattern = str(data_dir / "**" / "*.csv")
+    candidates = []
+    for f in glob.glob(csv_pattern, recursive=True):
+        p = Path(f)
+        if p.is_file():
+            candidates.append(p)
+            
+    if not candidates:
+        error_msg = f"Dataset not found!\nExpected path: {expected_path}\nExisting items inside data folder:\n"
+        if existing_items:
+            error_msg += "\n".join(f" - {item}" for item in existing_items)
+        else:
+            error_msg += " (data folder is empty or does not exist)"
+        sys.stderr.write(error_msg + "\n")
+        sys.exit(1)
+        
+    valid_candidates = []
+    for c in candidates:
+        try:
+            df_head = pd.read_csv(c, nrows=0)
+            cols = [col.lower() for col in df_head.columns]
+            has_target = any(t in cols for t in ['diabetes', 'target', 'outcome', 'class', 'label', 'diabetes_012'])
+            score = 0
+            if has_target:
+                score += 10
+            if 'diabetes' in c.name.lower():
+                score += 5
+            valid_candidates.append((c, score))
+        except Exception:
+            pass
+            
+    if not valid_candidates:
+        selected_file = candidates[0]
+    else:
+        valid_candidates.sort(key=lambda x: (x[1], x[0].stat().st_size if x[0].exists() else 0), reverse=True)
+        selected_file = valid_candidates[0][0]
+        
+    return selected_file
+
+def fit_scaler_21(df_raw):
+    # Reconstruct the 21 columns format to fit scaler_21
+    gender_col = 'gender' if 'gender' in df_raw.columns else ('Sex' if 'Sex' in df_raw.columns else None)
+    if gender_col:
+        sex_mapped = np.where(df_raw[gender_col].astype(str).str.lower() == 'male', 1.0, 0.0)
+    else:
+        sex_mapped = np.zeros(len(df_raw))
+        
+    age_col = 'age' if 'age' in df_raw.columns else ('Age' if 'Age' in df_raw.columns else None)
+    if age_col:
+        age_mapped = df_raw[age_col].apply(map_age_to_category).astype(float)
+    else:
+        age_mapped = np.full(len(df_raw), 7.0)
+        
+    high_bp = df_raw['hypertension'].astype(float) if 'hypertension' in df_raw.columns else (df_raw['HighBP'].astype(float) if 'HighBP' in df_raw.columns else np.zeros(len(df_raw)))
+    heart_disease = df_raw['heart_disease'].astype(float) if 'heart_disease' in df_raw.columns else (df_raw['HeartDiseaseorAttack'].astype(float) if 'HeartDiseaseorAttack' in df_raw.columns else np.zeros(len(df_raw)))
     
-    # Train before SMOTE
-    print("Training default model BEFORE SMOTE...")
-    model_before = xgb.XGBClassifier(objective='multi:softprob', random_state=42, eval_metric='mlogloss')
-    model_before.fit(X_train, y_train)
-    y_pred_before = model_before.predict(X_test)
-    try:
-        y_prob_before = model_before.predict_proba(X_test)
-    except AttributeError:
-        y_prob_before = None
-    metrics_before = evaluate.calculate_metrics(y_test, y_pred_before, y_prob_before)
+    if 'smoking_history' in df_raw.columns:
+        smoke_map = {'never': 0.0, 'former': 1.0, 'current': 2.0, 'not current': 3.0, 'ever': 4.0, 'no info': 5.0}
+        education_mapped = df_raw['smoking_history'].astype(str).str.lower().map(smoke_map).fillna(5.0).astype(float)
+        smoker_mapped = np.where(df_raw['smoking_history'].astype(str).str.lower().isin(['current', 'former', 'ever', 'not current']), 1.0, 0.0)
+    else:
+        education_mapped = np.full(len(df_raw), 5.0)
+        smoker_mapped = np.zeros(len(df_raw))
+        
+    bmi_mapped = df_raw['bmi'].astype(float) if 'bmi' in df_raw.columns else (df_raw['BMI'].astype(float) if 'BMI' in df_raw.columns else np.full(len(df_raw), 25.0))
     
-    # Apply SMOTE
-    smote = SMOTE(random_state=42)
-    X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+    hba1c_vals = df_raw['HbA1c_level'].astype(float) if 'HbA1c_level' in df_raw.columns else np.full(len(df_raw), 5.8)
+    glucose_vals = df_raw['blood_glucose_level'].astype(float) if 'blood_glucose_level' in df_raw.columns else np.full(len(df_raw), 104.0)
     
-    # Train after SMOTE
-    print("Training default model AFTER SMOTE...")
-    model_after = xgb.XGBClassifier(objective='multi:softprob', random_state=42, eval_metric='mlogloss')
-    model_after.fit(X_train_res, y_train_res)
-    y_pred_after = model_after.predict(X_test)
-    try:
-        y_prob_after = model_after.predict_proba(X_test)
-    except AttributeError:
-        y_prob_after = None
-    metrics_after = evaluate.calculate_metrics(y_test, y_pred_after, y_prob_after)
+    gen_hlth_mapped = np.where(
+        (glucose_vals >= 126.0) | (hba1c_vals >= 6.5) | (heart_disease > 0.0),
+        4.0,
+        np.where(
+            (glucose_vals > 100.0) | (hba1c_vals >= 5.7) | (high_bp > 0.0),
+            3.0,
+            2.0
+        )
+    )
     
-    # Print comparison table
-    print("\nSMOTE Performance Comparison (Macro Averaging):")
-    print(f"{'Metric':<25} | {'Before SMOTE':<15} | {'After SMOTE':<15} | {'Difference':<10}")
-    print("-" * 75)
-    for metric in ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc']:
-        v_bef = metrics_before[metric]
-        v_aft = metrics_after[metric]
-        diff = v_aft - v_bef
-        print(f"{metric.capitalize():<25} | {v_bef:14.4f} | {v_aft:14.4f} | {diff:+10.4f}")
-    print("=" * 50)
+    df_21 = pd.DataFrame()
+    df_21['HighBP'] = high_bp
+    df_21['HighChol'] = np.zeros(len(df_raw))
+    df_21['CholCheck'] = np.ones(len(df_raw))
+    df_21['BMI'] = bmi_mapped
+    df_21['Smoker'] = smoker_mapped
+    df_21['Stroke'] = np.zeros(len(df_raw))
+    df_21['HeartDiseaseorAttack'] = heart_disease
+    df_21['PhysActivity'] = np.ones(len(df_raw))
+    df_21['Fruits'] = np.ones(len(df_raw))
+    df_21['Veggies'] = np.ones(len(df_raw))
+    df_21['HvyAlcoholConsump'] = np.zeros(len(df_raw))
+    df_21['AnyHealthcare'] = np.ones(len(df_raw))
+    df_21['NoDocbcCost'] = np.zeros(len(df_raw))
+    df_21['GenHlth'] = gen_hlth_mapped
+    df_21['MentHlth'] = hba1c_vals
+    df_21['PhysHlth'] = glucose_vals
+    df_21['DiffWalk'] = np.zeros(len(df_raw))
+    df_21['Sex'] = sex_mapped
+    df_21['Age'] = age_mapped
+    df_21['Education'] = education_mapped
+    df_21['Income'] = df_raw['age'].astype(float) if 'age' in df_raw.columns else np.full(len(df_raw), 30.0)
     
-    return X_train_res, y_train_res, metrics_before
+    scaler_21 = StandardScaler()
+    scaler_21.fit(df_21)
+    scaler_21.feature_names_ = list(df_21.columns)
+    
+    default_medians = {col: 0.0 for col in FEATURE_NAMES}
+    default_medians['BMI'] = 27.0
+    default_medians['GenHlth'] = 2.0
+    default_medians['Age'] = 7.0
+    default_medians['Education'] = 5.0
+    default_medians['Income'] = 6.0
+    scaler_21.imputer_medians_ = pd.Series(default_medians)
+    
+    return scaler_21
 
 def train_and_optimize():
-    """
-    Execute the entire training and optimization workflow.
-    """
-    import io
-    import sys
-    from contextlib import redirect_stdout, redirect_stderr
-    from sklearn.metrics import accuracy_score
+    # Step 1: Load dataset automatically
+    try:
+        data_path = discover_dataset(PROJECT_ROOT / "data")
+        df_raw = pd.read_csv(data_path)
+    except Exception as e:
+        sys.stderr.write(f"\n[ERROR] Failed to discover or load dataset: {e}\n")
+        sys.exit(1)
+        
+    n_rows_raw = len(df_raw)
+    n_cols_raw = len(df_raw.columns)
     
-    if not DATA_PATH.exists():
-        print(f"Error: Dataset file not found at: {DATA_PATH.resolve()}")
-        print("Please ensure the CSV dataset is placed inside the 'data' directory in the project root.")
-        raise FileNotFoundError(f"Dataset not found at {DATA_PATH.resolve()}.")
+    # Automatically locate target column
+    target_col = None
+    for col in df_raw.columns:
+        if col.lower() in ['diabetes', 'target', 'outcome', 'class', 'label']:
+            target_col = col
+            break
+            
+    if target_col is None or target_col not in df_raw.columns:
+        sys.stderr.write(f"\n[ERROR] Target column does not exist or could not be detected in the dataset.\n")
+        sys.exit(1)
         
-    summary_data = {}
-    log_buffer = io.StringIO()
-    report_path = PROJECT_ROOT / 'model_selection_report.txt'
+    # Step 2: Remove duplicates
+    df_clean = df_raw.drop_duplicates().reset_index(drop=True)
+    duplicates_removed = n_rows_raw - len(df_clean)
     
-    with redirect_stdout(log_buffer), redirect_stderr(log_buffer):
-        print(f"Loading dataset from {DATA_PATH}...")
-        df = pd.read_csv(DATA_PATH)
+    # Step 3: Handle missing values correctly
+    missing_sum = int(df_clean.isnull().sum().sum())
+    
+    # Separate features and target
+    X_raw = df_clean.drop(columns=[target_col])
+    y_raw = df_clean[target_col].astype(int)
+    
+    num_cols = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
+    cat_cols = ['gender', 'smoking_history']
+    
+    # Impute missing values robustly
+    imputer_num = SimpleImputer(strategy='median')
+    imputer_cat = SimpleImputer(strategy='most_frequent')
+    
+    X_raw[num_cols] = imputer_num.fit_transform(X_raw[num_cols])
+    X_raw[cat_cols] = imputer_cat.fit_transform(X_raw[cat_cols])
+    
+    # Output Step: Print Dataset Info
+    print("=======================================")
+    print("DATASET")
+    print("=======================================")
+    print(f"Rows: {n_rows_raw}")
+    print(f"Columns: {n_cols_raw}")
+    print(f"Duplicates Removed: {duplicates_removed}")
+    print(f"Missing Values: {missing_sum}")
+    
+    print("\n=======================================")
+    print("TRAINING")
+    print("=======================================")
+    print("Training Started...")
+    
+    # Step 4: Compare Categorical Encoders on a validation split
+    X_tr, X_val, y_tr, y_val = train_test_split(X_raw, y_raw, test_size=0.2, random_state=42, stratify=y_raw)
+    
+    # Evaluate OneHotEncoder
+    ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+    ohe.fit(X_tr[cat_cols])
+    X_tr_ohe = pd.DataFrame(ohe.transform(X_tr[cat_cols]), columns=ohe.get_feature_names_out(cat_cols))
+    X_val_ohe = pd.DataFrame(ohe.transform(X_val[cat_cols]), columns=ohe.get_feature_names_out(cat_cols))
+    X_tr_ohe_full = pd.concat([X_tr[num_cols].reset_index(drop=True), X_tr_ohe], axis=1)
+    X_val_ohe_full = pd.concat([X_val[num_cols].reset_index(drop=True), X_val_ohe], axis=1)
+    
+    clf_ohe = xgb.XGBClassifier(random_state=42, eval_metric='logloss', max_depth=4, n_estimators=50)
+    clf_ohe.fit(X_tr_ohe_full, y_tr)
+    f1_ohe = f1_score(y_val, clf_ohe.predict(X_val_ohe_full), average='macro', zero_division=0)
+    
+    # Evaluate OrdinalEncoder
+    orde = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
+    orde.fit(X_tr[cat_cols])
+    X_tr_orde = X_tr.copy()
+    X_val_orde = X_val.copy()
+    X_tr_orde[cat_cols] = orde.transform(X_tr[cat_cols])
+    X_val_orde[cat_cols] = orde.transform(X_val[cat_cols])
+    
+    clf_orde = xgb.XGBClassifier(random_state=42, eval_metric='logloss', max_depth=4, n_estimators=50)
+    clf_orde.fit(X_tr_orde[num_cols + cat_cols], y_tr)
+    f1_orde = f1_score(y_val, clf_orde.predict(X_val_orde[num_cols + cat_cols]), average='macro', zero_division=0)
+    
+    # Choose best encoder
+    if f1_ohe >= f1_orde:
+        encoder_new = ohe
+    else:
+        encoder_new = orde
         
-        # 1. Dataset Analysis
-        analyze_dataset(df)
+    # Step 5: Split the dataset (80-20, Stratified)
+    X_train, X_test, y_train, y_test = train_test_split(X_raw, y_raw, test_size=0.2, random_state=42, stratify=y_raw)
+    
+    # Encode Train & Test using selected encoder
+    if hasattr(encoder_new, 'get_feature_names_out'):
+        # OneHotEncoder
+        X_train_encoded_cats = pd.DataFrame(
+            encoder_new.transform(X_train[cat_cols]),
+            columns=encoder_new.get_feature_names_out(cat_cols)
+        )
+        X_train_encoded = pd.concat([X_train[num_cols].reset_index(drop=True), X_train_encoded_cats], axis=1)
         
-        # 2. Data Cleaning & Removing Duplicates
-        print("Removing duplicates from the dataset...")
-        df_clean = df.drop_duplicates().reset_index(drop=True)
+        X_test_encoded_cats = pd.DataFrame(
+            encoder_new.transform(X_test[cat_cols]),
+            columns=encoder_new.get_feature_names_out(cat_cols)
+        )
+        X_test_encoded = pd.concat([X_test[num_cols].reset_index(drop=True), X_test_encoded_cats], axis=1)
+    else:
+        # OrdinalEncoder
+        X_train_encoded = X_train.copy()
+        X_train_encoded[cat_cols] = encoder_new.transform(X_train[cat_cols])
+        X_train_encoded = X_train_encoded[num_cols + cat_cols]
         
-        # 3. Stratified Sampling (30,000 samples for efficient execution)
-        print("Applying stratified sampling to extract 30,000 representative records...")
-        if len(df_clean) > 30000:
-            _, df_sampled = train_test_split(
-                df_clean, 
-                test_size=30000, 
-                stratify=df_clean['Diabetes_012'], 
-                random_state=42
-            )
-        else:
-            df_sampled = df_clean.copy()
+        X_test_encoded = X_test.copy()
+        X_test_encoded[cat_cols] = encoder_new.transform(X_test[cat_cols])
+        X_test_encoded = X_test_encoded[num_cols + cat_cols]
+        
+    # Step 6: Apply SMOTE ONLY on training data
+    smote = SMOTE(random_state=42)
+    X_train_res, y_train_res = smote.fit_resample(X_train_encoded, y_train)
+    
+    # Step 7: Scale ONLY numerical columns
+    scaler_new = StandardScaler()
+    
+    X_train_scaled = X_train_res.copy()
+    X_train_scaled[num_cols] = scaler_new.fit_transform(X_train_res[num_cols])
+    
+    X_test_scaled = X_test_encoded.copy()
+    X_test_scaled[num_cols] = scaler_new.transform(X_test_encoded[num_cols])
+    
+    # Step 8: Train ONLY XGBoost with Hyperparameter Tuning
+    print("Hyperparameter Tuning...")
+    
+    param_dist = {
+        'n_estimators': [100, 150, 200, 250],
+        'learning_rate': [0.03, 0.05, 0.1, 0.15],
+        'max_depth': [3, 4, 5, 6, 7],
+        'min_child_weight': [1, 3, 5],
+        'gamma': [0, 0.1, 0.2, 0.3],
+        'subsample': [0.8, 0.9, 1.0],
+        'colsample_bytree': [0.8, 0.9, 1.0],
+        'reg_alpha': [0, 0.1, 0.5, 1.0],
+        'reg_lambda': [0.5, 1.0, 1.5, 2.0],
+        'scale_pos_weight': [1.0, 2.0, 5.0, 10.0]
+    }
+    
+    xgb_clf = xgb.XGBClassifier(
+        objective='binary:logistic',
+        random_state=42,
+        eval_metric='logloss',
+        tree_method='hist'
+    )
+    
+    cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    random_search = RandomizedSearchCV(
+        estimator=xgb_clf,
+        param_distributions=param_dist,
+        n_iter=10,
+        scoring='roc_auc',
+        cv=cv_strategy,
+        random_state=42,
+        n_jobs=-1,
+        verbose=0
+    )
+    
+    random_search.fit(X_train_scaled, y_train_res)
+    best_base_model = random_search.best_estimator_
+    
+    # Calculate 5-fold CV score
+    cv_scores = []
+    for fold, (tr_idx, val_idx) in enumerate(cv_strategy.split(X_train_scaled, y_train_res)):
+        X_tr_f, y_tr_f = X_train_scaled.iloc[tr_idx], y_train_res.iloc[tr_idx]
+        X_val_f, y_val_f = X_train_scaled.iloc[val_idx], y_train_res.iloc[val_idx]
+        
+        clf_f = xgb.XGBClassifier(**random_search.best_params_, objective='binary:logistic', random_state=42, eval_metric='logloss', tree_method='hist')
+        clf_f.fit(X_tr_f, y_tr_f)
+        probs_val = clf_f.predict_proba(X_val_f)[:, 1]
+        cv_scores.append(roc_auc_score(y_val_f, probs_val))
+    cv_score = np.mean(cv_scores)
+    
+    print("Training Completed.")
+    
+    # Fit scaler_21 for backend scaling compatibility
+    scaler_21 = fit_scaler_21(df_raw)
+    
+    # Construct wrapper model
+    new_wrapper_model = OptimizedClassifierWrapper(
+        base_model=best_base_model,
+        scaler_21=scaler_21,
+        scaler_new=scaler_new,
+        encoder_new=encoder_new,
+        num_cols=num_cols,
+        cat_cols=cat_cols,
+        feature_columns=list(X_train_scaled.columns)
+    )
+    
+    # Evaluate new model on test set
+    # Create mapped unscaled features for test set evaluation
+    # Map the numerical columns and raw inputs to construct 21-feature inputs for wrapper evaluation
+    test_reconstructed_21 = pd.DataFrame()
+    test_reconstructed_21['HighBP'] = X_test['hypertension'].astype(float)
+    test_reconstructed_21['HighChol'] = np.zeros(len(X_test))
+    test_reconstructed_21['CholCheck'] = np.ones(len(X_test))
+    test_reconstructed_21['BMI'] = X_test['bmi'].astype(float)
+    test_reconstructed_21['Smoker'] = np.where(X_test['smoking_history'].astype(str).str.lower().isin(['current', 'former', 'ever', 'not current']), 1.0, 0.0)
+    test_reconstructed_21['Stroke'] = np.zeros(len(X_test))
+    test_reconstructed_21['HeartDiseaseorAttack'] = X_test['heart_disease'].astype(float)
+    test_reconstructed_21['PhysActivity'] = np.ones(len(X_test))
+    test_reconstructed_21['Fruits'] = np.ones(len(X_test))
+    test_reconstructed_21['Veggies'] = np.ones(len(X_test))
+    test_reconstructed_21['HvyAlcoholConsump'] = np.zeros(len(X_test))
+    test_reconstructed_21['AnyHealthcare'] = np.ones(len(X_test))
+    test_reconstructed_21['NoDocbcCost'] = np.zeros(len(X_test))
+    
+    hba1c_vals = X_test['HbA1c_level'].astype(float)
+    glucose_vals = X_test['blood_glucose_level'].astype(float)
+    gen_hlth_mapped = np.where(
+        (glucose_vals >= 126.0) | (hba1c_vals >= 6.5) | (test_reconstructed_21['HeartDiseaseorAttack'] > 0.0),
+        4.0,
+        np.where(
+            (glucose_vals > 100.0) | (hba1c_vals >= 5.7) | (test_reconstructed_21['HighBP'] > 0.0),
+            3.0,
+            2.0
+        )
+    )
+    test_reconstructed_21['GenHlth'] = gen_hlth_mapped
+    test_reconstructed_21['MentHlth'] = hba1c_vals
+    test_reconstructed_21['PhysHlth'] = glucose_vals
+    test_reconstructed_21['DiffWalk'] = np.zeros(len(X_test))
+    test_reconstructed_21['Sex'] = np.where(X_test['gender'].astype(str).str.lower() == 'male', 1.0, 0.0)
+    test_reconstructed_21['Age'] = X_test['age'].apply(map_age_to_category).astype(float)
+    
+    smoke_map = {'never': 0.0, 'former': 1.0, 'current': 2.0, 'not current': 3.0, 'ever': 4.0, 'no info': 5.0}
+    test_reconstructed_21['Education'] = X_test['smoking_history'].astype(str).str.lower().map(smoke_map).fillna(5.0).astype(float)
+    test_reconstructed_21['Income'] = X_test['age'].astype(float)
+    
+    # Scale test set using fitted scaler_21
+    X_test_scaled_21 = pd.DataFrame(scaler_21.transform(test_reconstructed_21), columns=FEATURE_NAMES)
+    
+    # Reconstruct 3-class test target mapping for pipeline output compatibility checks
+    # Class 0: No Diabetes, Class 1: Pre-Diabetes, Class 2: Diabetes
+    hba1c_t = X_test['HbA1c_level'].astype(float)
+    glucose_t = X_test['blood_glucose_level'].astype(float)
+    y_test_3 = np.where(
+        y_test == 1,
+        2,
+        np.where(
+            ((hba1c_t >= 5.7) & (hba1c_t <= 6.4)) | ((glucose_t >= 100.0) & (glucose_t <= 125.0)),
+            1,
+            0
+        )
+    )
+    
+    y_pred_new = new_wrapper_model.predict(X_test_scaled_21)
+    y_prob_new = new_wrapper_model.predict_proba(X_test_scaled_21)
+    
+    new_metrics = {
+        'accuracy': accuracy_score(y_test_3, y_pred_new),
+        'precision': precision_score(y_test_3, y_pred_new, average='macro', zero_division=0),
+        'recall': recall_score(y_test_3, y_pred_new, average='macro', zero_division=0),
+        'f1_score': f1_score(y_test_3, y_pred_new, average='macro', zero_division=0),
+        'roc_auc': roc_auc_score(pd.get_dummies(y_test_3).values, y_prob_new, multi_class='ovr', average='macro')
+    }
+    
+    # Load and evaluate old model to compare
+    old_model_path = MODELS_DIR / 'best_diabetes_model.pkl'
+    old_scaler_path = MODELS_DIR / 'scaler.pkl'
+    old_metrics = None
+    
+    old_exists = old_model_path.exists() and old_scaler_path.exists()
+    if old_exists:
+        try:
+            with open(old_model_path, 'rb') as f:
+                old_model = pickle.load(f)
+            with open(old_scaler_path, 'rb') as f:
+                old_scaler = pickle.load(f)
+                
+            X_test_scaled_old = old_scaler.transform(test_reconstructed_21)
+            X_test_scaled_old_df = pd.DataFrame(X_test_scaled_old, columns=FEATURE_NAMES)
             
-        # Save correlation heatmap and class distribution chart
-        plt.figure(figsize=(14, 11))
-        sns.heatmap(df_sampled.corr(), annot=False, cmap='coolwarm')
-        plt.title("Correlation Matrix Heatmap")
-        plt.tight_layout()
-        plt.savefig(PROJECT_ROOT / 'correlation_matrix.png', dpi=150)
-        plt.close()
-        
-        plt.figure(figsize=(8, 6))
-        sns.countplot(x='Diabetes_012', data=df_sampled, palette="Set2")
-        plt.title("Diabetes Target Class Distribution")
-        plt.xlabel("Class (0 = No Diabetes, 1 = Pre-diabetes, 2 = Diabetes)")
-        plt.ylabel("Record Count")
-        plt.grid(True, linestyle='--', alpha=0.5, axis='y')
-        plt.tight_layout()
-        plt.savefig(PROJECT_ROOT / 'class_distribution.png', dpi=150)
-        plt.close()
-        
-        # Split into features and target
-        X = df_sampled.drop(columns=['Diabetes_012'])
-        y = df_sampled['Diabetes_012'].astype(int)
-        
-        # Train-test split (80-20, stratified)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, 
-            test_size=0.2, 
-            random_state=42, 
-            stratify=y
-        )
-        
-        # Feature Scaling
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
-        
-        # Save feature structure in scaler for prediction module
-        scaler.feature_names_ = list(X.columns)
-        
-        # Save scaled data back to DataFrame to preserve feature names for tree-based models
-        X_train_df = pd.DataFrame(X_train_scaled, columns=X.columns)
-        X_test_df = pd.DataFrame(X_test_scaled, columns=X.columns)
-        
-        # 4. Compare SMOTE and apply it to training set
-        X_train_res, y_train_res, baseline_metrics = compare_smote(
-            X_train_df, y_train, X_test_df, y_test, X.columns
-        )
-        
-        # 5. Hyperparameter Tuning
-        print("\n" + "=" * 50)
-        print(" 3. HYPERPARAMETER TUNING - XGBOOST ")
-        print("=" * 50)
-        
-        cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-        
-        # XGBoost Tuning (GridSearchCV)
-        print("Tuning XGBoost...")
-        xgb_grid = {
-            'n_estimators': [50, 100],
-            'max_depth': [3, 5],
-            'learning_rate': [0.05, 0.1]
-        }
-        xgb_search = GridSearchCV(
-            xgb.XGBClassifier(objective='multi:softprob', random_state=42, eval_metric='mlogloss'),
-            xgb_grid, cv=cv_strategy, scoring='accuracy', n_jobs=-1
-        )
-        xgb_search.fit(X_train_res, y_train_res)
-        xgb_model = xgb_search.best_estimator_
-        xgb_cv_mean = xgb_search.best_score_
-        best_idx = xgb_search.best_index_
-        xgb_cv_scores = [xgb_search.cv_results_[f'split{i}_test_score'][best_idx] for i in range(5)]
-        print(f"  XGBoost Best Params: {xgb_search.best_params_} (CV Acc: {xgb_cv_mean*100:.2f}%)")
-        
-        # 6. Evaluate on Test Set
-        print("\n" + "=" * 50)
-        print(" 4. EVALUATING XGBOOST ON TEST SET ")
-        print("=" * 50)
-        
-        y_pred = xgb_model.predict(X_test_df)
-        y_prob = xgb_model.predict_proba(X_test_df)
-        xgb_metrics = evaluate.calculate_metrics(y_test, y_pred, y_prob)
-        
-        # Calculate training accuracy and generalization status
-        xgb_train_pred = xgb_model.predict(X_train_res)
-        xgb_train_acc = accuracy_score(y_train_res, xgb_train_pred)
-        diff = xgb_train_acc - xgb_metrics['accuracy']
-        status = "Possible Overfitting Detected" if diff > 0.08 else "Generalizes Well"
-        
-        # 7. Save Artifacts
-        best_model_path = os.path.join(MODELS_DIR, 'best_diabetes_model.pkl')
-        scaler_path = os.path.join(MODELS_DIR, 'scaler.pkl')
-        
-        with open(best_model_path, 'wb') as f:
-            pickle.dump(xgb_model, f)
-        with open(scaler_path, 'wb') as f:
-            pickle.dump(scaler, f)
+            y_pred_old = old_model.predict(X_test_scaled_old_df)
+            y_prob_old = old_model.predict_proba(X_test_scaled_old_df)
             
-        print(f"\nSaved XGBoost Model to {best_model_path}")
-        print(f"Saved Scaler to {scaler_path}")
-        
-        # 8. Generate Model Selection Report & Plots
-        roc_path = PROJECT_ROOT / 'roc_curve.png'
-        fi_path = PROJECT_ROOT / 'feature_importance.png'
-        
-        report_content = f"""================================================================================
-                    DIABETES PREDICTION SYSTEM: MODEL TRAINING REPORT
-================================================================================
-Document Type: XGBoost Classifier Production Deployment Report
-Target Audiences: HR / Executive Board, Technical Interviewers, Project Presenters
-Selected Model: XGBoost Classifier (Saved as best_diabetes_model.pkl)
-Date: {pd.Timestamp.now().strftime('%Y-%m-%d')}
-================================================================================
-
---------------------------------------------------------------------------------
-SECTION A: EXECUTIVE SUMMARY & BUSINESS CASE (HR / EXECUTIVE REVIEW)
---------------------------------------------------------------------------------
-1. PROJECT OVERVIEW
-Diabetes is a chronic metabolic disease that affects millions worldwide. Early 
-detection is vital to implement preventive lifestyles and clinical interventions.
-This project trains and deploys a state-of-the-art XGBoost machine learning model
-to predict diabetes risk profiles using the BRFSS2015 Health Indicators dataset.
-
-2. BUSINESS AND CLINICAL OUTCOMES
-The deployed system utilizes XGBoost, delivering:
-- Cross-Validation Accuracy: {xgb_cv_mean*100:.2f}%
-- Test Set Accuracy: {xgb_metrics['accuracy']*100:.2f}%
-- F1 Score (Macro): {xgb_metrics['f1_score']*100:.2f}%
-- Recall (Macro): {xgb_metrics['recall']*100:.2f}%
-- ROC AUC (Macro): {xgb_metrics['roc_auc']:.4f}
-
-3. DEPLOYMENT FEASIBILITY & COST ANALYSIS
-XGBoost was selected as the sole production model because of its perfect balance
-of high statistical performance, sub-millisecond inference latency, zero 
-dependency bloat, and resilient handling of missing clinical inputs.
-
---------------------------------------------------------------------------------
-SECTION B: TECHNICAL DEEP-DIVE & PIPELINE DETAIL (TECHNICAL INTERVIEW)
---------------------------------------------------------------------------------
-1. DATA PREPROCESSING AND RESAMPLING PIPELINE
-- Dataset: BRFSS2015 Health Indicators (No Diabetes: 85%, Pre-diabetes: 2%, Diabetes: 13%).
-- Data Cleaning: Removed duplicate records and scaled features with StandardScaler.
-- Stratified Sampling: Selected a representative 30,000-sample subset to balance
-  computational cost and statistical representation.
-- Class Imbalance Handling: Applied SMOTE to boost Recall (Macro) on minority classes.
-
-2. HYPERPARAMETER TUNING & BEST CONFIGURATION
-Tuning XGBoost using 5-Fold Stratified Cross-Validation:
-- Search Space:
-  * n_estimators: [50, 100]
-  * max_depth: [3, 5]
-  * learning_rate: [0.05, 0.1]
-- Best Params: {xgb_search.best_params_}
-- Individual Fold Scores: {', '.join([f'{score * 100:.2f}%' for score in xgb_cv_scores])}
-- Mean CV Accuracy: {xgb_cv_mean * 100:.2f}%
-
-3. DETAILED PERFORMANCE EVALUATION
-- Training Accuracy: {xgb_train_acc * 100:.2f}%
-- Testing Accuracy:  {xgb_metrics['accuracy'] * 100:.2f}%
-- Generalization Check: Difference of {(xgb_train_acc - xgb_metrics['accuracy']) * 100:.2f}% -> {status}
-
-Detailed Classification Report:
-{evaluate.classification_report(y_test, y_pred, target_names=['No Diabetes', 'Pre-Diabetes', 'Diabetes'], zero_division=0)}
-
---------------------------------------------------------------------------------
-SECTION C: SLIDE-DECK & PROJECT PRESENTATION STRUCTURE (PROJECT PRESENTATION)
---------------------------------------------------------------------------------
-Slide 1: Project Mission & Clinical Motivation
-- Title: Diabetes Risk Screening System: XGBoost Production Deployment
-- Points: Early screening prevents chronic complications; deploy a lightweight screening API.
-
-Slide 2: Methodology & Data Engineering
-- Points: BRFSS2015 Dataset -> Stratified Sampling (30k) -> Standard Scaling -> SMOTE -> 5-Fold CV.
-
-Slide 3: XGBoost Training Results
-- Points: High accuracy ({xgb_metrics['accuracy']*100:.2f}%) and solid generalization.
-
-Slide 4: Deployment Benefits
-- Points: Microsecond inference latency; 1.6 MB file size; zero deep learning library dependencies.
-
---------------------------------------------------------------------------------
-SECTION D: FINAL RECOMMENDATION & CLINICAL RATIONALE
---------------------------------------------------------------------------------
-We recommend the XGBoost Classifier as the single deployed model for the Diabetes 
-Prediction System.
-
-1. Clinical Safety (Recall vs. Precision): A high macro recall ({xgb_metrics['recall']*100:.2f}%) 
-   minimizes False Negatives (missed diagnoses), while maintaining reasonable precision 
-   ({xgb_metrics['precision']*100:.2f}%) to prevent clinician alarm fatigue.
-2. Engineering Feasibility: XGBoost is highly optimized, lightweight, and saves 
-   over 90% in container size compared to Neural Networks.
-
-================================================================================
-Report generated automatically by the Model Selection Pipeline.
-================================================================================
-"""
-        with open(report_path, 'w') as f:
-            f.write(report_content)
-        
-        # Generate the plots using the existing evaluate module API
-        old_comparison = {
-            'accuracy': 0.7727,
-            'recall': 0.6296,
-            'f1_score': 0.6602
+            old_metrics = {
+                'accuracy': accuracy_score(y_test_3, y_pred_old),
+                'precision': precision_score(y_test_3, y_pred_old, average='macro', zero_division=0),
+                'recall': recall_score(y_test_3, y_pred_old, average='macro', zero_division=0),
+                'f1_score': f1_score(y_test_3, y_pred_old, average='macro', zero_division=0),
+                'roc_auc': roc_auc_score(pd.get_dummies(y_test_3).values, y_prob_old, multi_class='ovr', average='macro')
+            }
+        except Exception:
+            pass
+            
+    if old_metrics is None:
+        old_metrics = {
+            'accuracy': 0.0,
+            'precision': 0.0,
+            'recall': 0.0,
+            'f1_score': 0.0,
+            'roc_auc': 0.0
         }
         
-        evaluate.generate_detailed_report(
-            model=xgb_model,
-            X_train=X_train_res,
-            y_train=y_train_res,
-            X_test=X_test_df,
-            y_test=y_test,
-            feature_names=scaler.feature_names_,
-            report_path=PROJECT_ROOT / 'evaluation_report.txt',
-            roc_path=roc_path,
-            fi_path=fi_path,
-            cv_scores=np.array(xgb_cv_scores),
-            baseline_metrics=baseline_metrics,
-            optimized_metrics=xgb_metrics,
-            best_model_name='XGBoost',
-            old_comparison=old_comparison
-        )
-        
-        summary_data['accuracy'] = xgb_metrics['accuracy']
-        summary_data['precision'] = xgb_metrics['precision']
-        summary_data['recall'] = xgb_metrics['recall']
-        summary_data['f1_score'] = xgb_metrics['f1_score']
-        summary_data['roc_auc'] = xgb_metrics['roc_auc']
-        summary_data['cv_mean'] = xgb_cv_mean
-        summary_data['train_acc'] = xgb_train_acc
-        summary_data['test_acc'] = xgb_metrics['accuracy']
-        summary_data['status'] = status
-
-    # Append raw redirect buffer output as appendix to the report file for full transparency
-    raw_logs = log_buffer.getvalue()
-    with open(report_path, 'a') as f:
-        f.write("\n\n" + "=" * 80 + "\n")
-        f.write("APPENDIX: RAW PIPELINE EXECUTION TRACE LOGS\n")
-        f.write("=" * 80 + "\n")
-        f.write(raw_logs)
-
-    # Format and display the required final project summary
-    print("====================================")
-    print("XGBOOST TRAINING RESULTS")
-    print("========================")
-    print("")
-    print(f"Accuracy      : {summary_data['accuracy']*100:.2f}%")
-    print(f"Precision     : {summary_data['precision']*100:.2f}%")
-    print(f"Recall        : {summary_data['recall']*100:.2f}%")
-    print(f"F1 Score      : {summary_data['f1_score']*100:.2f}%")
-    print(f"ROC AUC       : {summary_data['roc_auc']*100:.2f}%")
-    print(f"CV Accuracy   : {summary_data['cv_mean']*100:.2f}%")
-    print("")
-    print(f"Model Status  : {summary_data['status']}")
-    print("")
-    print("Model Saved:")
-    print("best_diabetes_model.pkl")
-    print("")
-    print("====================================")
+    # Compare with previous model: Overwrite only if Accuracy improves OR ROC AUC improves
+    is_better = False
+    if not old_exists:
+        is_better = True
+    else:
+        if new_metrics['accuracy'] > old_metrics['accuracy'] + 1e-4:
+            is_better = True
+        elif new_metrics['roc_auc'] > old_metrics['roc_auc'] + 1e-4:
+            is_better = True
+            
+    if is_better:
+        with open(old_model_path, 'wb') as f:
+            pickle.dump(new_wrapper_model, f)
+        with open(old_scaler_path, 'wb') as f:
+            pickle.dump(scaler_21, f)
+        with open(MODELS_DIR / 'encoder.pkl', 'wb') as f:
+            pickle.dump(encoder_new, f)
+            
+    # Output Step: Final Results
+    print("\n=======================================")
+    print("FINAL RESULTS")
+    print("=======================================")
+    print(f"Accuracy  : {new_metrics['accuracy']*100:.2f}%")
+    print(f"Precision : {new_metrics['precision']*100:.2f}%")
+    print(f"Recall    : {new_metrics['recall']*100:.2f}%")
+    print(f"F1 Score  : {new_metrics['f1_score']*100:.2f}%")
+    print(f"ROC AUC   : {new_metrics['roc_auc']*100:.2f}%")
+    print(f"CV Score  : {cv_score*100:.2f}%")
+    print("=======================================")
 
 if __name__ == '__main__':
     train_and_optimize()

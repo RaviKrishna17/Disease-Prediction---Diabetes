@@ -162,12 +162,12 @@ def prepare_input_features(raw_data):
         gen_hlth = gen_hlth_est
     
     try:
-        ment_hlth = float(raw_data.get('mentHlth', 0.0))
+        ment_hlth = float(raw_data.get('hba1c')) if raw_data.get('hba1c') is not None and raw_data.get('hba1c') != '' else float(raw_data.get('mentHlth', 0.0))
     except (ValueError, TypeError):
         ment_hlth = 0.0
 
     try:
-        phys_hlth = float(raw_data.get('physHlth', 0.0))
+        phys_hlth = float(raw_data.get('glucose')) if raw_data.get('glucose') is not None and raw_data.get('glucose') != '' else float(raw_data.get('physHlth', 0.0))
     except (ValueError, TypeError):
         phys_hlth = 0.0
     
@@ -185,12 +185,20 @@ def prepare_input_features(raw_data):
     
     # 20-21. Socioeconomic factors (sensible defaults)
     try:
-        education = float(raw_data.get('education', 5.0))
+        if 'smoking' in raw_data or 'smoking_history' in raw_data:
+            s_val = str(raw_data.get('smoking', raw_data.get('smoking_history', 'never'))).lower().strip()
+            smoke_map = {'never': 0.0, 'former': 1.0, 'current': 2.0, 'not current': 3.0, 'ever': 4.0, 'no info': 5.0}
+            education = float(smoke_map.get(s_val, 5.0))
+        else:
+            education = float(raw_data.get('education', 5.0))
     except (ValueError, TypeError):
         education = 5.0
 
     try:
-        income = float(raw_data.get('income', 6.0))
+        if 'age' in raw_data:
+            income = float(age_years)
+        else:
+            income = float(raw_data.get('income', 6.0))
     except (ValueError, TypeError):
         income = 6.0
     

@@ -2,6 +2,15 @@
     "python.pyrefly.disableTypeErrors": true,
     "python.pyrefly.typeCheckingMode": "off",
     "python.analysis.typeCheckingMode": "off",
-    "css.lint.unknownAtRules": "ignore"
+    "css.lint.unknownAtRules": "ignore",
+    "python.analysis.exclude": [
+        "**/__pyrefly_virtual__/**",
+        "d:/__pyrefly_virtual__/**",
+        "d:\\__pyrefly_virtual__\\**"
+    ],
+    "python.analysis.ignore": [
+        "**/__pyrefly_virtual__/**",
+        "d:/__pyrefly_virtual__/**",
+        "d:\\__pyrefly_virtual__\\**"
+    ]
 }
-

@@ -1,0 +1,26 @@
+# Pyrefly Configuration
+# This file configures Pyrefly to exclude and ignore diagnostics for in-memory virtual files.
+
+project-excludes = [
+    "**/__pyrefly_virtual__/**",
+    "d:/__pyrefly_virtual__/**",
+    "d:\\__pyrefly_virtual__\\**"
+]
+
+[[sub-config]]
+matches = "**/__pyrefly_virtual__/**"
+[sub-config.errors]
+parse-error = "ignore"
+unknown-name = "ignore"
+
+[[sub-config]]
+matches = "d:/__pyrefly_virtual__/**"
+[sub-config.errors]
+parse-error = "ignore"
+unknown-name = "ignore"
+
+[[sub-config]]
+matches = "d:\\__pyrefly_virtual__\\**"
+[sub-config.errors]
+parse-error = "ignore"
+unknown-name = "ignore"

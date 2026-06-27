@@ -1,6 +1,0 @@
-{
-  "name": "Diabetes Prediction",
-  "description": "A premium machine learning-based early diabetes risk assessment platform and clinical reference application.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
